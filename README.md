@@ -1,9 +1,9 @@
 # Hi, I'm pyflowlabs
 
-> Developer building bots, scrapers and automations that save you time.
+> Developer building bots, scrapers, APIs and web apps.
 
-I'm a developer focused on automation, bots, and data work — small, reliable tools that take a
-repetitive task off your plate. I mostly work in Python and JavaScript, and I care about clean,
+I'm a developer focused on automation, bots, backends and data work — reliable tools and the services
+that run behind apps. I work in Python, JavaScript (Node.js) and Java, and I care about clean,
 readable code you can actually own and build on.
 
 ## What I do
@@ -19,6 +19,7 @@ readable code you can actually own and build on.
 | --- | --- | --- |
 | [task-manager](https://github.com/pyflowlabs/task-manager) | A full-stack task manager web app | Node.js · Express · SQLite |
 | [task-api](https://github.com/pyflowlabs/task-api) | A REST API with full CRUD and validation | Node.js · Express · SQLite |
+| [products-api](https://github.com/pyflowlabs/products-api) | A REST API built with Java and Spring Boot | Java · Spring Boot · JPA |
 | [discord-bot](https://github.com/pyflowlabs/discord-bot) | A Discord bot with useful slash commands | Python · discord.py |
 | [web-scraper](https://github.com/pyflowlabs/web-scraper) | Scrapes a catalogue into clean CSV and JSON | Python · BeautifulSoup |
 | [crypto-tracker](https://github.com/pyflowlabs/crypto-tracker) | Live crypto prices from a public API | Python · requests |
