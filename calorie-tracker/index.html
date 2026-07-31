@@ -68,11 +68,25 @@
         <button id="startScanBtn" type="button" class="primary">📷 Kamera starten</button>
         <button id="stopScanBtn" type="button" class="ghost hidden">Stoppen</button>
       </div>
-      <p class="hint" id="scanHint">Halte den Barcode ins Bild. Wird die Kamera nicht unterstützt, gib den Code manuell ein.</p>
+      <p class="hint" id="scanHint">Halte den Barcode ins grüne Feld. Klappt die Kamera nicht, gib den Code manuell ein.</p>
       <div class="manual">
         <input id="manualBarcode" type="text" inputmode="numeric" placeholder="Barcode-Nummer eingeben" />
         <button id="manualBtn" type="button">Suchen</button>
       </div>
+    </section>
+
+    <!-- Foto (KI-Schätzung) -->
+    <section class="view hidden" id="view-photo">
+      <h2 class="view-title">Foto vom Essen 🤖</h2>
+      <label class="photo-pick" id="photoPick">
+        <input id="photoInput" type="file" accept="image/*" capture="environment" hidden />
+        <img id="photoPreview" class="photo-preview hidden" alt="Vorschau" />
+        <span id="photoPlaceholder">📸 Tippen, um ein Foto aufzunehmen oder auszuwählen</span>
+      </label>
+      <button id="estimateBtn" type="button" class="primary hidden">Kalorien schätzen</button>
+      <div id="estimateResult"></div>
+      <p class="hint" id="photoHint">Die KI erkennt das Gericht und schätzt Kalorien &amp; Nährwerte – so genau wie möglich, aber immer ungefähr.</p>
+      <button id="apiKeyBtn" type="button" class="ghost apikey-btn">🔑 KI-Schlüssel einrichten</button>
     </section>
   </main>
 
@@ -81,6 +95,7 @@
     <button class="tab active" data-view="diary" type="button"><span>📖</span>Tagebuch</button>
     <button class="tab" data-view="search" type="button"><span>🔍</span>Suchen</button>
     <button class="tab" data-view="scan" type="button"><span>📷</span>Scannen</button>
+    <button class="tab" data-view="photo" type="button"><span>📸</span>Foto</button>
   </nav>
 
   <!-- Portions-Dialog -->
@@ -121,8 +136,26 @@
     </div>
   </div>
 
+  <!-- API-Key-Dialog -->
+  <div class="sheet-backdrop hidden" id="keyBackdrop"></div>
+  <div class="sheet hidden" id="keySheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><div class="p-name">KI-Schlüssel (Anthropic)</div></div>
+    <p class="p-per100">Die Foto-Schätzung nutzt Claude. Du brauchst einen eigenen API-Schlüssel von
+      console.anthropic.com. Er wird nur lokal auf deinem Gerät gespeichert und direkt an Anthropic gesendet.</p>
+    <label class="p-amount">
+      API-Schlüssel (sk-ant-…)
+      <input id="keyInput" type="password" placeholder="sk-ant-..." autocomplete="off" />
+    </label>
+    <div class="sheet-actions">
+      <button id="keyClear" type="button" class="ghost">Löschen</button>
+      <button id="keySave" type="button" class="primary">Speichern</button>
+    </div>
+  </div>
+
   <div class="toast hidden" id="toast"></div>
 
+  <script src="vendor/zxing.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

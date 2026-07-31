@@ -94,11 +94,12 @@ function renderDiary() {
   entries.forEach((e, i) => {
     const li = document.createElement("li");
     li.className = "entry";
+    const portion = e.est ? "📸 Portion (KI)" : round(e.amount) + " g";
     li.innerHTML = `
       <img class="entry-thumb" src="${e.img || ""}" alt="" onerror="this.style.visibility='hidden'"/>
       <div class="entry-main">
         <div class="entry-name">${escapeHtml(e.name)}</div>
-        <div class="entry-sub">${round(e.amount)} g · E ${round(e.prot)}g · KH ${round(e.carb)}g · F ${round(e.fat)}g</div>
+        <div class="entry-sub">${portion} · E ${round(e.prot)}g · KH ${round(e.carb)}g · F ${round(e.fat)}g</div>
       </div>
       <div class="entry-kcal">${round(e.kcal)}</div>
       <button class="entry-del" data-i="${i}" aria-label="Löschen">×</button>`;
@@ -211,37 +212,56 @@ $("#manualBtn").addEventListener("click", () => {
   if (c) lookupBarcode(c);
 });
 
-/* ---------- Kamera-Scanner ---------- */
-let stream = null;
-let detector = null;
-let scanning = false;
+/* ---------- Kamera-Scanner ----------
+ * Nutzt den nativen BarcodeDetector (Android/Chrome), sonst ZXing als Fallback
+ * (iOS/Safari kann BarcodeDetector noch nicht). Beide rufen lookupBarcode(). */
+let stream = null;         // MediaStream (nativer Pfad)
+let detector = null;       // BarcodeDetector-Instanz
+let scanning = false;      // Loop-Flag (nativer Pfad)
+let zxingReader = null;    // ZXing-Reader (Fallback)
+
+function onScanned(code) {
+  stopScan();
+  if (navigator.vibrate) navigator.vibrate(60);
+  lookupBarcode(code);
+}
 
 async function startScan() {
   const hint = $("#scanHint");
-  if (!("BarcodeDetector" in window)) {
-    hint.textContent =
-      "Dein Browser unterstützt den Kamera-Scan (noch) nicht. Gib den Barcode bitte unten manuell ein. Tipp: Chrome auf Android klappt am besten.";
-    return;
-  }
-  try {
-    detector = detector || new BarcodeDetector({
-      formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
-    });
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-    });
-    const video = $("#video");
-    video.srcObject = stream;
-    await video.play();
+  $("#startScanBtn").classList.add("hidden");
+  $("#stopScanBtn").classList.remove("hidden");
+  const video = $("#video");
 
-    scanning = true;
-    $("#startScanBtn").classList.add("hidden");
-    $("#stopScanBtn").classList.remove("hidden");
-    hint.textContent = "Kamera läuft — Barcode ins grüne Feld halten.";
-    scanLoop();
+  try {
+    if ("BarcodeDetector" in window) {
+      // Nativer Pfad (Android/Chrome)
+      detector = detector || new BarcodeDetector({
+        formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
+      });
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+      video.srcObject = stream;
+      await video.play();
+      scanning = true;
+      hint.textContent = "Kamera läuft — Barcode ins grüne Feld halten.";
+      scanLoop();
+    } else if (window.ZXing && ZXing.BrowserMultiFormatReader) {
+      // Fallback (iOS/Safari) — ZXing verwaltet die Kamera selbst
+      zxingReader = new ZXing.BrowserMultiFormatReader();
+      hint.textContent = "Kamera läuft — Barcode ins grüne Feld halten.";
+      await zxingReader.decodeFromConstraints(
+        { video: { facingMode: "environment" } },
+        video,
+        (result) => { if (result) onScanned(result.getText()); }
+      );
+    } else {
+      throw new Error("kein Scanner verfügbar");
+    }
   } catch (err) {
+    stopScan();
     hint.textContent =
-      "Kamerazugriff nicht möglich. Erlaube den Kamerazugriff oder nutze die manuelle Eingabe.";
+      "Kamerazugriff nicht möglich. Erlaube die Kamera in den Einstellungen oder nutze die manuelle Eingabe.";
   }
 }
 
@@ -250,13 +270,7 @@ async function scanLoop() {
   const video = $("#video");
   try {
     const codes = await detector.detect(video);
-    if (codes.length) {
-      const code = codes[0].rawValue;
-      stopScan();
-      if (navigator.vibrate) navigator.vibrate(60);
-      lookupBarcode(code);
-      return;
-    }
+    if (codes.length) { onScanned(codes[0].rawValue); return; }
   } catch { /* einzelne Frames dürfen fehlschlagen */ }
   requestAnimationFrame(scanLoop);
 }
@@ -264,6 +278,7 @@ async function scanLoop() {
 function stopScan() {
   scanning = false;
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+  if (zxingReader) { try { zxingReader.reset(); } catch {} zxingReader = null; }
   const v = $("#video");
   if (v) v.srcObject = null;
   $("#startScanBtn").classList.remove("hidden");
@@ -272,6 +287,166 @@ function stopScan() {
 
 $("#startScanBtn").addEventListener("click", startScan);
 $("#stopScanBtn").addEventListener("click", () => { stopScan(); $("#scanHint").textContent = "Scan gestoppt."; });
+
+/* ---------- Foto → KI-Kalorienschätzung ----------
+ * Nutzt Claude Vision (Anthropic). Der API-Schlüssel des Nutzers liegt lokal
+ * im Browser und wird direkt an api.anthropic.com gesendet. */
+const AI_MODEL = "claude-sonnet-5";
+let photoBase64 = null; // aktuelles Foto als JPEG-Base64 (ohne data:-Prefix)
+
+function getApiKey() { return localStorage.getItem("kt_apikey") || ""; }
+
+/* Skaliert das Foto herunter (spart Tokens) und liefert JPEG-Base64. */
+function fileToScaledBase64(file, maxSize = 1024) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+      URL.revokeObjectURL(img.src);
+      resolve(dataUrl.split(",")[1]);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+$("#photoInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = $("#photoPreview");
+  preview.src = URL.createObjectURL(file);
+  preview.classList.remove("hidden");
+  $("#photoPlaceholder").classList.add("hidden");
+  $("#estimateResult").innerHTML = "";
+  $("#estimateBtn").classList.remove("hidden");
+  try {
+    photoBase64 = await fileToScaledBase64(file);
+  } catch {
+    toast("Foto konnte nicht gelesen werden.");
+  }
+});
+
+const AI_PROMPT =
+  "Du bist ein Ernährungsexperte. Schätze für das auf dem Foto gezeigte Essen " +
+  "die Nährwerte der SICHTBAREN PORTION, so genau wie möglich (Schätzung ist ok). " +
+  "Antworte AUSSCHLIESSLICH mit reinem JSON, ohne Markdown, in diesem Format: " +
+  '{"name":"Name des Gerichts","kcal":Zahl,"prot":Zahl,"carb":Zahl,"fat":Zahl,' +
+  '"items":["Zutat 1","Zutat 2"],"note":"kurzer Hinweis zu Annahmen (Portionsgröße etc.)"}. ' +
+  "kcal/prot/carb/fat sind Gesamtwerte für die Portion (Gramm bei Makros). " +
+  'Ist kein Essen zu erkennen: {"name":"Kein Essen erkannt","kcal":0,"prot":0,"carb":0,"fat":0,"items":[],"note":"..."}.';
+
+async function estimatePhoto() {
+  const key = getApiKey();
+  if (!key) { openSheet("keySheet", "keyBackdrop"); return; }
+  if (!photoBase64) { toast("Bitte zuerst ein Foto wählen."); return; }
+
+  const btn = $("#estimateBtn");
+  const out = $("#estimateResult");
+  btn.disabled = true;
+  out.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: AI_MODEL,
+        max_tokens: 1024,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: photoBase64 } },
+            { type: "text", text: AI_PROMPT },
+          ],
+        }],
+      }),
+    });
+
+    if (!res.ok) {
+      const status = res.status;
+      out.innerHTML = "";
+      if (status === 401) toast("API-Schlüssel ungültig. Bitte prüfen.");
+      else if (status === 429) toast("Zu viele Anfragen – kurz warten.");
+      else toast("KI-Anfrage fehlgeschlagen (" + status + ").");
+      return;
+    }
+
+    const data = await res.json();
+    const text = (data.content || []).map((b) => b.text || "").join("");
+    const est = parseEstimate(text);
+    if (!est) { out.innerHTML = ""; toast("Antwort nicht verständlich – nochmal versuchen."); return; }
+    renderEstimate(est);
+  } catch {
+    out.innerHTML = "";
+    toast("Netzwerkfehler – Internetverbindung?");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* Robust: extrahiert das erste JSON-Objekt aus der Antwort. */
+function parseEstimate(text) {
+  try { return JSON.parse(text); } catch {}
+  const s = text.indexOf("{"), e = text.lastIndexOf("}");
+  if (s >= 0 && e > s) { try { return JSON.parse(text.slice(s, e + 1)); } catch {} }
+  return null;
+}
+
+function renderEstimate(est) {
+  const out = $("#estimateResult");
+  const kcal = round(num(est.kcal));
+  const items = Array.isArray(est.items) ? est.items : [];
+  out.innerHTML = `
+    <div class="est-name">${escapeHtml(est.name || "Essen")}</div>
+    <div class="p-per100">${kcal} kcal · E ${round(num(est.prot))}g · KH ${round(num(est.carb))}g · F ${round(num(est.fat))}g</div>
+    ${items.length ? `<ul class="est-items">${items.map((i) => `<li>• ${escapeHtml(i)}</li>`).join("")}</ul>` : ""}
+    ${est.note ? `<div class="est-note">ℹ️ ${escapeHtml(est.note)}</div>` : ""}
+    <div class="sheet-actions">
+      <button id="estAdd" type="button" class="primary">Ins Tagebuch</button>
+    </div>`;
+  $("#estAdd").addEventListener("click", () => {
+    if (kcal <= 0) { toast("Kein Essen erkannt."); return; }
+    const entries = loadDiary(state.date);
+    entries.push({
+      name: est.name || "Essen (Foto)", img: "", est: true,
+      kcal, prot: num(est.prot), carb: num(est.carb), fat: num(est.fat),
+    });
+    saveDiary(state.date, entries);
+    renderDiary();
+    renderSummary();
+    switchView("diary");
+    toast((est.name || "Essen") + " hinzugefügt ✓");
+  });
+}
+
+$("#estimateBtn").addEventListener("click", estimatePhoto);
+$("#apiKeyBtn").addEventListener("click", () => {
+  $("#keyInput").value = getApiKey();
+  openSheet("keySheet", "keyBackdrop");
+});
+$("#keySave").addEventListener("click", () => {
+  const k = $("#keyInput").value.trim();
+  if (k) { localStorage.setItem("kt_apikey", k); toast("Schlüssel gespeichert ✓"); }
+  closeSheet("keySheet", "keyBackdrop");
+});
+$("#keyClear").addEventListener("click", () => {
+  localStorage.removeItem("kt_apikey");
+  $("#keyInput").value = "";
+  toast("Schlüssel gelöscht.");
+  closeSheet("keySheet", "keyBackdrop");
+});
+$("#keyBackdrop").addEventListener("click", () => closeSheet("keySheet", "keyBackdrop"));
 
 /* ---------- Portions-Dialog ---------- */
 function openPortion(product) {

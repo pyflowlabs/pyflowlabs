@@ -9,13 +9,30 @@ Läuft komplett im Browser, ganz ohne Server. Das Tagebuch wird lokal auf dem Ge
 
 ## Funktionen
 
-- 📷 **Barcode scannen** mit der Handy-Kamera → Produkt wird automatisch gefunden
+- 📷 **Barcode scannen** mit der Handy-Kamera → Produkt wird automatisch gefunden (Android **und iOS**)
+- 📸 **Foto vom Essen → KI schätzt die Kalorien** automatisch (Claude Vision)
 - 🔍 **Suche** in der Datenbank nach Namen (z. B. „Haferflocken")
 - ⌨️ **Manuelle Barcode-Eingabe** als Fallback
 - 🍽️ **Portionsrechner** — Menge in Gramm eingeben, Kalorien & Makros werden berechnet
 - 📖 **Tagebuch** mit Tagesübersicht (Kalorien-Ring + Eiweiß / Kohlenhydrate / Fett)
 - 🎯 Einstellbares **Tagesziel**
 - 📱 **Installierbar** als App auf dem Homescreen (PWA), offline-fähige Hülle
+
+## Foto-Kalorienschätzung (KI)
+
+Im Tab **Foto** kannst du ein Bild deines Essens aufnehmen. Die App schickt es an
+**Claude Vision** (Anthropic), das das Gericht erkennt und Kalorien + Nährwerte der
+sichtbaren Portion schätzt – so genau wie möglich, aber immer *ungefähr*.
+
+Dafür brauchst du einen eigenen **Anthropic-API-Schlüssel**
+([console.anthropic.com](https://console.anthropic.com)):
+
+1. Tab **Foto** → **🔑 KI-Schlüssel einrichten**
+2. Schlüssel (`sk-ant-…`) eintragen und speichern
+
+> Der Schlüssel wird **nur lokal** auf deinem Gerät gespeichert (`localStorage`) und
+> direkt an Anthropic gesendet – nicht an einen fremden Server. Die Nutzung der
+> Claude-API kostet je nach deinem Anthropic-Konto ein paar Cent pro Anfrage.
 
 ## Ausprobieren
 
@@ -38,9 +55,10 @@ python3 -m http.server 8000
 
 ## Kamera-Scan: Kompatibilität
 
-Der Scanner nutzt die native **`BarcodeDetector`**-API.
-- ✅ **Chrome auf Android** — voll unterstützt
-- ⚠️ **iOS/Safari** — noch kein `BarcodeDetector`; dort die **manuelle Eingabe** oder **Suche** verwenden
+Der Scanner nutzt die native **`BarcodeDetector`**-API und fällt automatisch auf
+die mitgelieferte **ZXing**-Bibliothek zurück, wenn der Browser das nicht kann.
+- ✅ **Chrome auf Android** — native, schnelle Erkennung
+- ✅ **iOS/Safari** — Erkennung über ZXing (Kamerazugriff nur über HTTPS)
 
 ## Technik
 
@@ -53,6 +71,7 @@ Reines HTML/CSS/JavaScript, keine Build-Tools, keine Abhängigkeiten.
 | `app.js` | Logik: Suche, Scan, Tagebuch, Speicherung |
 | `manifest.webmanifest` | PWA-Metadaten |
 | `sw.js` | Service Worker (Offline-Hülle) |
+| `vendor/zxing.min.js` | Barcode-Erkennung als iOS-Fallback |
 
 ## Ideen für später
 
