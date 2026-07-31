@@ -1,0 +1,15 @@
+{
+  "name": "KalTrack — Kalorien-Tracker",
+  "short_name": "KalTrack",
+  "description": "Kalorien tracken mit Barcode-Scanner und riesiger Lebensmittel-Datenbank.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1216",
+  "theme_color": "#0f1216",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

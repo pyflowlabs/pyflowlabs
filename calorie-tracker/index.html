@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#0f1216" />
+  <title>KalTrack — Kalorien-Tracker</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Kopfzeile -->
+  <header class="topbar">
+    <div class="brand">🍎 KalTrack</div>
+    <button id="dateBtn" class="date-pill" type="button">Heute</button>
+  </header>
+
+  <!-- Tagesübersicht -->
+  <section class="summary" id="summary">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 120 120" class="ring">
+        <circle class="ring-bg" cx="60" cy="60" r="52" />
+        <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52" />
+      </svg>
+      <div class="ring-center">
+        <div class="ring-kcal" id="kcalEaten">0</div>
+        <div class="ring-goal" id="kcalGoal">/ 2000 kcal</div>
+        <div class="ring-left" id="kcalLeft">2000 übrig</div>
+      </div>
+    </div>
+    <div class="macros">
+      <div class="macro"><span class="macro-val" id="mProt">0 g</span><span class="macro-lbl">Eiweiß</span></div>
+      <div class="macro"><span class="macro-val" id="mCarb">0 g</span><span class="macro-lbl">Kohlenh.</span></div>
+      <div class="macro"><span class="macro-val" id="mFat">0 g</span><span class="macro-lbl">Fett</span></div>
+    </div>
+  </section>
+
+  <!-- Ansichten -->
+  <main class="content">
+    <!-- Tagebuch -->
+    <section class="view" id="view-diary">
+      <h2 class="view-title">Tagebuch</h2>
+      <ul class="entry-list" id="entryList"></ul>
+      <p class="empty" id="diaryEmpty">Noch nichts gegessen heute. Tippe unten auf <b>Suchen</b> oder <b>Scannen</b>. 🙂</p>
+    </section>
+
+    <!-- Suche -->
+    <section class="view hidden" id="view-search">
+      <h2 class="view-title">Lebensmittel suchen</h2>
+      <div class="searchbar">
+        <input id="searchInput" type="search" inputmode="search" placeholder="z. B. Haferflocken, Banane, Milch…" autocomplete="off" />
+        <button id="searchBtn" type="button">Suchen</button>
+      </div>
+      <p class="hint" id="searchHint">Tippe einen Namen ein und drücke Suchen.</p>
+      <ul class="result-list" id="searchResults"></ul>
+    </section>
+
+    <!-- Scannen -->
+    <section class="view hidden" id="view-scan">
+      <h2 class="view-title">Barcode scannen</h2>
+      <div class="scanner">
+        <video id="video" playsinline muted></video>
+        <div class="scan-frame"></div>
+      </div>
+      <div class="scan-actions">
+        <button id="startScanBtn" type="button" class="primary">📷 Kamera starten</button>
+        <button id="stopScanBtn" type="button" class="ghost hidden">Stoppen</button>
+      </div>
+      <p class="hint" id="scanHint">Halte den Barcode ins Bild. Wird die Kamera nicht unterstützt, gib den Code manuell ein.</p>
+      <div class="manual">
+        <input id="manualBarcode" type="text" inputmode="numeric" placeholder="Barcode-Nummer eingeben" />
+        <button id="manualBtn" type="button">Suchen</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Untere Navigation -->
+  <nav class="tabbar">
+    <button class="tab active" data-view="diary" type="button"><span>📖</span>Tagebuch</button>
+    <button class="tab" data-view="search" type="button"><span>🔍</span>Suchen</button>
+    <button class="tab" data-view="scan" type="button"><span>📷</span>Scannen</button>
+  </nav>
+
+  <!-- Portions-Dialog -->
+  <div class="sheet-backdrop hidden" id="sheetBackdrop"></div>
+  <div class="sheet hidden" id="portionSheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <img id="pImg" class="p-img" alt="" />
+      <div>
+        <div class="p-name" id="pName">—</div>
+        <div class="p-brand" id="pBrand"></div>
+      </div>
+    </div>
+    <div class="p-per100" id="pPer100"></div>
+    <label class="p-amount">
+      Menge (g / ml)
+      <input id="pAmount" type="number" min="1" step="1" value="100" inputmode="decimal" />
+    </label>
+    <div class="p-totals" id="pTotals"></div>
+    <div class="sheet-actions">
+      <button id="pCancel" type="button" class="ghost">Abbrechen</button>
+      <button id="pAdd" type="button" class="primary">Hinzufügen</button>
+    </div>
+  </div>
+
+  <!-- Ziel-Dialog -->
+  <div class="sheet-backdrop hidden" id="goalBackdrop"></div>
+  <div class="sheet hidden" id="goalSheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><div class="p-name">Tagesziel</div></div>
+    <label class="p-amount">
+      Kalorienziel pro Tag (kcal)
+      <input id="goalInput" type="number" min="500" step="50" value="2000" inputmode="numeric" />
+    </label>
+    <div class="sheet-actions">
+      <button id="goalCancel" type="button" class="ghost">Abbrechen</button>
+      <button id="goalSave" type="button" class="primary">Speichern</button>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
