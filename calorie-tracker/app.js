@@ -325,12 +325,142 @@ $("#photoInput").addEventListener("change", async (e) => {
   $("#photoPlaceholder").classList.add("hidden");
   $("#estimateResult").innerHTML = "";
   $("#estimateBtn").classList.remove("hidden");
+  $("#aiEstimateBtn").classList.remove("hidden");
   try {
     photoBase64 = await fileToScaledBase64(file);
   } catch {
     toast("Foto konnte nicht gelesen werden.");
   }
 });
+
+/* ===== Gratis-Erkennung auf dem Gerät (TensorFlow.js MobileNet) =====
+ * Läuft komplett im Browser, keine Kosten, keine Daten verlassen das Gerät.
+ * Erkennt gängige Lebensmittel und schätzt eine typische Portion. */
+const DEFAULT_PHOTO_HINT = $("#photoHint").textContent;
+
+// Erkanntes ImageNet-Label -> typische Portion (Gesamtwerte). Schlüsselwörter
+// werden im Klassennamen gesucht (z. B. "banana", "pizza, pizza pie").
+const FOOD_MAP = [
+  { keys: ["banana"], name: "Banane", kcal: 105, prot: 1, carb: 27, fat: 0 },
+  { keys: ["orange"], name: "Orange", kcal: 62, prot: 1, carb: 15, fat: 0 },
+  { keys: ["lemon"], name: "Zitrone", kcal: 17, prot: 1, carb: 5, fat: 0 },
+  { keys: ["pineapple", "ananas"], name: "Ananas (Portion)", kcal: 82, prot: 1, carb: 22, fat: 0 },
+  { keys: ["granny smith", "apple"], name: "Apfel", kcal: 95, prot: 0, carb: 25, fat: 0 },
+  { keys: ["strawberry"], name: "Erdbeeren (Portion)", kcal: 49, prot: 1, carb: 12, fat: 0 },
+  { keys: ["pomegranate"], name: "Granatapfel", kcal: 130, prot: 3, carb: 33, fat: 2 },
+  { keys: ["fig"], name: "Feige", kcal: 37, prot: 0, carb: 10, fat: 0 },
+  { keys: ["pizza"], name: "Pizza (Stück)", kcal: 285, prot: 12, carb: 36, fat: 10 },
+  { keys: ["cheeseburger"], name: "Cheeseburger", kcal: 300, prot: 15, carb: 30, fat: 14 },
+  { keys: ["hotdog", "hot dog"], name: "Hotdog", kcal: 290, prot: 11, carb: 24, fat: 17 },
+  { keys: ["bagel"], name: "Bagel", kcal: 250, prot: 10, carb: 48, fat: 2 },
+  { keys: ["pretzel"], name: "Brezel", kcal: 230, prot: 6, carb: 47, fat: 2 },
+  { keys: ["french loaf", "baguette"], name: "Baguette (Portion)", kcal: 185, prot: 6, carb: 35, fat: 2 },
+  { keys: ["guacamole"], name: "Guacamole", kcal: 150, prot: 2, carb: 8, fat: 13 },
+  { keys: ["burrito"], name: "Burrito", kcal: 450, prot: 20, carb: 50, fat: 18 },
+  { keys: ["ice cream", "icecream"], name: "Eis (Portion)", kcal: 207, prot: 4, carb: 24, fat: 11 },
+  { keys: ["ice lolly", "popsicle"], name: "Eis am Stiel", kcal: 80, prot: 0, carb: 20, fat: 0 },
+  { keys: ["espresso", "coffee"], name: "Espresso", kcal: 3, prot: 0, carb: 0, fat: 0 },
+  { keys: ["red wine"], name: "Rotwein (Glas)", kcal: 125, prot: 0, carb: 4, fat: 0 },
+  { keys: ["broccoli"], name: "Brokkoli (Portion)", kcal: 55, prot: 4, carb: 11, fat: 1 },
+  { keys: ["cauliflower"], name: "Blumenkohl (Portion)", kcal: 50, prot: 4, carb: 10, fat: 0 },
+  { keys: ["cucumber"], name: "Gurke", kcal: 16, prot: 1, carb: 4, fat: 0 },
+  { keys: ["mushroom"], name: "Champignons (Portion)", kcal: 22, prot: 3, carb: 3, fat: 0 },
+  { keys: ["bell pepper"], name: "Paprika", kcal: 30, prot: 1, carb: 7, fat: 0 },
+  { keys: ["corn", "ear"], name: "Maiskolben", kcal: 125, prot: 4, carb: 27, fat: 2 },
+  { keys: ["mashed potato"], name: "Kartoffelpüree (Portion)", kcal: 215, prot: 4, carb: 35, fat: 7 },
+  { keys: ["meat loaf", "meatloaf"], name: "Hackbraten (Portion)", kcal: 290, prot: 22, carb: 8, fat: 19 },
+  { keys: ["carbonara", "spaghetti"], name: "Spaghetti (Portion)", kcal: 450, prot: 16, carb: 60, fat: 15 },
+  { keys: ["zucchini", "courgette"], name: "Zucchini (Portion)", kcal: 33, prot: 2, carb: 6, fat: 1 },
+  { keys: ["squash"], name: "Kürbis (Portion)", kcal: 45, prot: 1, carb: 11, fat: 0 },
+  { keys: ["artichoke"], name: "Artischocke", kcal: 60, prot: 4, carb: 13, fat: 0 },
+  { keys: ["cabbage"], name: "Kohl (Portion)", kcal: 25, prot: 1, carb: 6, fat: 0 },
+  { keys: ["trifle"], name: "Dessert (Portion)", kcal: 250, prot: 4, carb: 35, fat: 11 },
+  { keys: ["chocolate sauce", "chocolate"], name: "Schokolade (Portion)", kcal: 210, prot: 3, carb: 24, fat: 12 },
+  { keys: ["dough", "pretzel"], name: "Teiggebäck (Portion)", kcal: 250, prot: 6, carb: 42, fat: 7 },
+  { keys: ["hotpot", "hot pot", "soup", "consomme"], name: "Eintopf/Suppe (Portion)", kcal: 200, prot: 12, carb: 20, fat: 8 },
+];
+
+function matchFood(preds) {
+  for (const p of preds) {
+    const label = (p.className || "").toLowerCase();
+    for (const f of FOOD_MAP) {
+      if (f.keys.some((k) => label.includes(k))) {
+        return { food: f, className: p.className, prob: p.probability };
+      }
+    }
+  }
+  return null;
+}
+
+let mnModel = null;
+let mnLoading = null;
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("Skript nicht geladen: " + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function ensureModel() {
+  if (mnModel) return mnModel;
+  if (!mnLoading) {
+    mnLoading = (async () => {
+      if (!window.tf)
+        await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js");
+      if (!window.mobilenet)
+        await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js");
+      mnModel = await window.mobilenet.load({ version: 2, alpha: 1.0 });
+      return mnModel;
+    })();
+  }
+  return mnLoading;
+}
+
+async function estimatePhotoLocal() {
+  if (!photoBase64) { toast("Bitte zuerst ein Foto wählen."); return; }
+  const btn = $("#estimateBtn");
+  const out = $("#estimateResult");
+  btn.disabled = true;
+  out.innerHTML = '<div class="spinner"></div>';
+  $("#photoHint").textContent = "Erkennungs-Modell wird geladen (einmalig, dann offline nutzbar)…";
+  try {
+    const model = await ensureModel();
+    const img = new Image();
+    img.src = "data:image/jpeg;base64," + photoBase64;
+    await img.decode();
+    const preds = await model.classify(img, 5);
+    const m = matchFood(preds);
+    if (!m) { out.innerHTML = ""; renderNoMatch(preds); return; }
+    renderEstimate({
+      name: m.food.name,
+      kcal: m.food.kcal, prot: m.food.prot, carb: m.food.carb, fat: m.food.fat,
+      items: [],
+      note: `Erkannt: ${m.className} (${Math.round(m.prob * 100)} %). Grobe Schätzung für eine typische Portion – Menge kann abweichen.`,
+    });
+  } catch {
+    out.innerHTML = "";
+    toast("Erkennung fehlgeschlagen – Internetverbindung fürs erste Laden nötig.");
+  } finally {
+    btn.disabled = false;
+    $("#photoHint").textContent = DEFAULT_PHOTO_HINT;
+  }
+}
+
+function renderNoMatch(preds) {
+  const guesses = (preds || []).slice(0, 3)
+    .map((p) => `<li>• ${escapeHtml(p.className)} (${Math.round(p.probability * 100)} %)</li>`).join("");
+  $("#estimateResult").innerHTML = `
+    <div class="est-name">Nicht sicher erkannt 🤔</div>
+    <div class="est-note">Das Gratis-Modell erkennt vor allem gängige Einzel-Lebensmittel.
+      Für dieses Bild nutze besser die <b>Suche</b> oder den <b>Barcode</b> – oder probiere die genaue KI-Variante.</div>
+    ${guesses ? `<div class="p-per100">Vermutungen:</div><ul class="est-guesses">${guesses}</ul>` : ""}`;
+}
+
+$("#estimateBtn").addEventListener("click", estimatePhotoLocal);
 
 const AI_PROMPT =
   "Du bist ein Ernährungsexperte. Schätze für das auf dem Foto gezeigte Essen " +
@@ -341,12 +471,12 @@ const AI_PROMPT =
   "kcal/prot/carb/fat sind Gesamtwerte für die Portion (Gramm bei Makros). " +
   'Ist kein Essen zu erkennen: {"name":"Kein Essen erkannt","kcal":0,"prot":0,"carb":0,"fat":0,"items":[],"note":"..."}.';
 
-async function estimatePhoto() {
+async function estimatePhotoAI() {
   const key = getApiKey();
   if (!key) { openSheet("keySheet", "keyBackdrop"); return; }
   if (!photoBase64) { toast("Bitte zuerst ein Foto wählen."); return; }
 
-  const btn = $("#estimateBtn");
+  const btn = $("#aiEstimateBtn");
   const out = $("#estimateResult");
   btn.disabled = true;
   out.innerHTML = '<div class="spinner"></div>';
@@ -430,7 +560,7 @@ function renderEstimate(est) {
   });
 }
 
-$("#estimateBtn").addEventListener("click", estimatePhoto);
+$("#aiEstimateBtn").addEventListener("click", estimatePhotoAI);
 $("#apiKeyBtn").addEventListener("click", () => {
   $("#keyInput").value = getApiKey();
   openSheet("keySheet", "keyBackdrop");

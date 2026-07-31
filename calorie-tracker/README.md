@@ -10,7 +10,7 @@ Läuft komplett im Browser, ganz ohne Server. Das Tagebuch wird lokal auf dem Ge
 ## Funktionen
 
 - 📷 **Barcode scannen** mit der Handy-Kamera → Produkt wird automatisch gefunden (Android **und iOS**)
-- 📸 **Foto vom Essen → KI schätzt die Kalorien** automatisch (Claude Vision)
+- 📸 **Foto vom Essen → Kalorien automatisch** (gratis, direkt auf dem Gerät; optional genauere KI)
 - 🔍 **Suche** in der Datenbank nach Namen (z. B. „Haferflocken")
 - ⌨️ **Manuelle Barcode-Eingabe** als Fallback
 - 🍽️ **Portionsrechner** — Menge in Gramm eingeben, Kalorien & Makros werden berechnet
@@ -18,21 +18,37 @@ Läuft komplett im Browser, ganz ohne Server. Das Tagebuch wird lokal auf dem Ge
 - 🎯 Einstellbares **Tagesziel**
 - 📱 **Installierbar** als App auf dem Homescreen (PWA), offline-fähige Hülle
 
-## Foto-Kalorienschätzung (KI)
+## Foto-Kalorienschätzung
 
-Im Tab **Foto** kannst du ein Bild deines Essens aufnehmen. Die App schickt es an
-**Claude Vision** (Anthropic), das das Gericht erkennt und Kalorien + Nährwerte der
-sichtbaren Portion schätzt – so genau wie möglich, aber immer *ungefähr*.
+Im Tab **Foto** nimmst du ein Bild deines Essens auf. Es gibt zwei Wege:
 
-Dafür brauchst du einen eigenen **Anthropic-API-Schlüssel**
-([console.anthropic.com](https://console.anthropic.com)):
+### 🆓 Gratis – direkt auf dem Gerät (Standard)
 
-1. Tab **Foto** → **🔑 KI-Schlüssel einrichten**
-2. Schlüssel (`sk-ant-…`) eintragen und speichern
+Ein **Bilderkennungs-Modell** ([TensorFlow.js MobileNet](https://github.com/tensorflow/tfjs-models/tree/master/mobilenet))
+läuft komplett **im Browser auf deinem Handy**:
 
-> Der Schlüssel wird **nur lokal** auf deinem Gerät gespeichert (`localStorage`) und
-> direkt an Anthropic gesendet – nicht an einen fremden Server. Die Nutzung der
-> Claude-API kostet je nach deinem Anthropic-Konto ein paar Cent pro Anfrage.
+- **Kostet nichts**, keine Anmeldung, kein Schlüssel.
+- Die **Bilder verlassen dein Gerät nicht**.
+- Erkennt **gängige Lebensmittel** (Banane, Pizza, Burger, Apfel, Brokkoli, …) und
+  schätzt eine **typische Portion** aus einer eingebauten Kalorientabelle.
+
+> ⚠️ Ehrlich: Das ist eine **grobe** Schätzung. Es erkennt vor allem einzelne,
+> klare Lebensmittel – kein exaktes Wiegen und keine komplexen Teller. Für genaue
+> Werte sind **Barcode** und **Suche** treffsicherer.
+>
+> Beim ersten Mal wird das Modell (~14 MB) einmalig geladen; danach geht es schnell.
+
+### 🤖 Optional: genauer mit KI (kostet ein paar Cent)
+
+Wer es genauer will, kann **Claude Vision** (Anthropic) nutzen – erkennt auch
+komplexere Gerichte und Zutaten. Dafür brauchst du einen eigenen
+**Anthropic-API-Schlüssel** ([console.anthropic.com](https://console.anthropic.com)):
+
+1. Tab **Foto** → **🔑 KI-Schlüssel** eintragen und speichern
+2. Foto wählen → **🤖 Genauer mit KI**
+
+> Der Schlüssel wird **nur lokal** gespeichert (`localStorage`) und direkt an
+> Anthropic gesendet. Jede Anfrage kostet je nach Konto ein paar Cent.
 
 ## Ausprobieren
 
@@ -72,6 +88,12 @@ Reines HTML/CSS/JavaScript, keine Build-Tools, keine Abhängigkeiten.
 | `manifest.webmanifest` | PWA-Metadaten |
 | `sw.js` | Service Worker (Offline-Hülle) |
 | `vendor/zxing.min.js` | Barcode-Erkennung als iOS-Fallback |
+
+## Hinweis zu externen Bibliotheken
+
+Für die Gratis-Fotoerkennung werden TensorFlow.js und das MobileNet-Modell beim
+ersten Gebrauch von einem CDN (jsDelivr) geladen. Das passiert nur einmal und nur,
+wenn du die Foto-Erkennung wirklich benutzt – der Rest der App bleibt offline-fähig.
 
 ## Ideen für später
 

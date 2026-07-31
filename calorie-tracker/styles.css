@@ -287,7 +287,10 @@ button { cursor: pointer; font-family: inherit; }
 }
 .photo-preview { width: 100%; height: 100%; object-fit: cover; }
 #estimateBtn { width: 100%; margin-top: 12px; }
-.apikey-btn { width: 100%; margin-top: 8px; }
+#aiEstimateBtn { width: 100%; margin-top: 8px; }
+.apikey-btn { width: 100%; margin-top: 8px; font-size: 13px; }
+.est-guesses { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; color: var(--muted); }
+.est-guesses li { padding: 2px 0; }
 
 #estimateResult:not(:empty) {
   margin-top: 14px;
