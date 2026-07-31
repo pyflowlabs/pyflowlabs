@@ -39,6 +39,38 @@ function loadActivity(date) {
 }
 function saveActivity(date, a) { localStorage.setItem("kt_act_" + date, JSON.stringify(a)); }
 
+/* Wasser (ml pro Tag) */
+function loadWater(date) { return num(localStorage.getItem("kt_water_" + date)); }
+function saveWater(date, ml) { localStorage.setItem("kt_water_" + date, String(Math.max(0, ml))); }
+const WATER_GOAL = 2000, GLASS = 250;
+
+/* Gewicht: Log { "YYYY-MM-DD": kg } + Zielgewicht */
+function loadWeightLog() { try { return JSON.parse(localStorage.getItem("kt_weightlog")) || {}; } catch { return {}; } }
+function saveWeightLog(l) { localStorage.setItem("kt_weightlog", JSON.stringify(l)); }
+function weightGoal() { return num(localStorage.getItem("kt_weightgoal")); }
+/* Gewicht am/​vor dem Datum (letzter bekannter Wert). */
+function weightAt(date) {
+  const log = loadWeightLog();
+  const keys = Object.keys(log).filter((k) => k <= date).sort();
+  return keys.length ? log[keys[keys.length - 1]] : null;
+}
+function setWeight(date, kg) { const l = loadWeightLog(); l[date] = kg; saveWeightLog(l); }
+
+/* Datum um delta Tage verschieben */
+function shiftDate(key, delta) {
+  const d = new Date(key + "T00:00:00");
+  d.setDate(d.getDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
+function dayLabelText(key) {
+  const t = todayKey();
+  if (key === t) return "Heute";
+  if (key === shiftDate(t, -1)) return "Gestern";
+  if (key === shiftDate(t, 1)) return "Morgen";
+  const d = new Date(key + "T00:00:00");
+  return d.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+}
+
 function loadCatalog() {
   try { return JSON.parse(localStorage.getItem("kt_catalog")) || {}; } catch { return {}; }
 }
@@ -104,6 +136,7 @@ function mealTotals(entries, key) {
 }
 
 function renderDashboard() {
+  $("#dayLabel").textContent = dayLabelText(state.date);
   const entries = loadDiary(state.date);
   const act = loadActivity(state.date);
   const sum = entries.reduce(
@@ -162,7 +195,93 @@ function renderDashboard() {
   // Aktivität
   $("#actSteps").textContent = act.steps.toLocaleString("de-DE") + " Schritte";
   $("#actSub").textContent = round(act.burned) + " kcal verbrannt";
+
+  renderWater();
+  renderWeight();
+  renderWeekChart();
 }
+
+/* ---------- Wasser ---------- */
+function renderWater() {
+  const ml = loadWater(state.date);
+  $("#waterGoal").textContent = (WATER_GOAL / 1000).toLocaleString("de-DE", { minimumFractionDigits: 1 });
+  $("#waterVal").textContent = (ml / 1000).toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " l";
+  const filled = Math.round(ml / GLASS);
+  const total = Math.max(8, filled);
+  const g = $("#glasses");
+  g.innerHTML = "";
+  for (let i = 0; i < total; i++) {
+    const el = document.createElement("div");
+    el.className = "glass" + (i < filled ? " full" : "");
+    g.appendChild(el);
+  }
+}
+$("#waterPlus").addEventListener("click", () => { saveWater(state.date, loadWater(state.date) + GLASS); renderWater(); });
+$("#waterMinus").addEventListener("click", () => { saveWater(state.date, loadWater(state.date) - GLASS); renderWater(); });
+
+/* ---------- Gewicht ---------- */
+function renderWeight() {
+  const kg = weightAt(state.date);
+  const goal = weightGoal();
+  $("#weightVal").textContent = kg != null ? kg.toLocaleString("de-DE", { minimumFractionDigits: 1 }) + " kg" : "– kg";
+  $("#weightGoal").textContent = goal ? goal.toLocaleString("de-DE", { minimumFractionDigits: 1 }) + " kg" : "–";
+  const trend = $("#weightTrend");
+  if (kg != null && goal) {
+    const diff = kg - goal;
+    const d = Math.abs(diff).toFixed(1).replace(".", ",");
+    trend.textContent = Math.abs(diff) < 0.05 ? "Ziel erreicht 🎉"
+      : (diff > 0 ? "noch " + d + " kg" : d + " kg unter Ziel");
+  } else trend.textContent = "";
+}
+function adjustWeight(delta) {
+  const cur = weightAt(state.date);
+  const base = cur != null ? cur : (weightGoal() || 80);
+  setWeight(state.date, Math.round((base + delta) * 10) / 10);
+  renderWeight();
+}
+$("#weightPlus").addEventListener("click", () => adjustWeight(0.1));
+$("#weightMinus").addEventListener("click", () => adjustWeight(-0.1));
+$("#weightGoalBtn").addEventListener("click", () => {
+  const cur = weightAt(state.date);
+  $("#weightInput").value = cur != null ? cur : "";
+  $("#weightGoalInput").value = weightGoal() || "";
+  openSheet("wgSheet", "wgBackdrop");
+});
+$("#wgSave").addEventListener("click", () => {
+  const w = num($("#weightInput").value), g = num($("#weightGoalInput").value);
+  if (w > 0) setWeight(state.date, w);
+  if (g > 0) localStorage.setItem("kt_weightgoal", String(g));
+  renderWeight(); closeSheet("wgSheet", "wgBackdrop"); toast("Gespeichert ✓");
+});
+$("#wgCancel").addEventListener("click", () => closeSheet("wgSheet", "wgBackdrop"));
+$("#wgBackdrop").addEventListener("click", () => closeSheet("wgSheet", "wgBackdrop"));
+
+/* ---------- Wochen-Verlauf ---------- */
+function renderWeekChart() {
+  const chart = $("#weekChart");
+  chart.innerHTML = "";
+  const days = [];
+  for (let i = 6; i >= 0; i--) days.push(shiftDate(state.date, -i));
+  const sums = days.map((d) => loadDiary(d).reduce((a, e) => a + e.kcal, 0));
+  const max = Math.max(state.goal, ...sums, 1);
+  days.forEach((d, i) => {
+    const kcal = sums[i];
+    const h = Math.round((kcal / max) * 100);
+    const col = document.createElement("div");
+    col.className = "chart-col";
+    const dl = new Date(d + "T00:00:00").toLocaleDateString("de-DE", { weekday: "short" }).slice(0, 2);
+    col.innerHTML = `
+      <div class="chart-bar-wrap"><div class="chart-bar ${kcal > state.goal ? "over" : ""}" style="height:${h}%"></div></div>
+      <div class="chart-day">${dl}</div>`;
+    chart.appendChild(col);
+  });
+}
+
+/* ---------- Tages-Navigation ---------- */
+function changeDay(delta) { state.date = shiftDate(state.date, delta); renderDashboard(); }
+$("#prevDay").addEventListener("click", () => changeDay(-1));
+$("#nextDay").addEventListener("click", () => changeDay(1));
+$("#dayLabel").addEventListener("click", () => { state.date = todayKey(); renderDashboard(); });
 
 function setMacro(id, val, goal) {
   $("#m" + id).textContent = round(val) + " / " + goal + " g";
@@ -458,6 +577,12 @@ const FOOD_MAP = [
   { keys: ["chocolate"], name: "Schokolade (Portion)", kcal: 210, prot: 3, carb: 24, fat: 12 },
   { keys: ["dough"], name: "Teiggebäck (Portion)", kcal: 250, prot: 6, carb: 42, fat: 7 },
   { keys: ["hotpot", "hot pot", "soup", "consomme"], name: "Eintopf/Suppe (Portion)", kcal: 200, prot: 12, carb: 20, fat: 8 },
+  { keys: ["potpie", "pot pie"], name: "Pastete (Portion)", kcal: 400, prot: 12, carb: 35, fat: 24 },
+  { keys: ["custard apple", "cherimoya"], name: "Cherimoya", kcal: 120, prot: 3, carb: 30, fat: 1 },
+  { keys: ["jackfruit"], name: "Jackfrucht (Portion)", kcal: 155, prot: 3, carb: 40, fat: 1 },
+  { keys: ["eggnog"], name: "Eierpunsch (Glas)", kcal: 220, prot: 6, carb: 21, fat: 11 },
+  { keys: ["cheese"], name: "Käse (Portion)", kcal: 200, prot: 12, carb: 1, fat: 17 },
+  { keys: ["butternut", "acorn squash"], name: "Kürbis (Portion)", kcal: 45, prot: 1, carb: 11, fat: 0 },
 ];
 function matchFood(preds) {
   for (const p of preds) {
@@ -653,11 +778,44 @@ $("#keySave").addEventListener("click", () => {
 $("#keyClear").addEventListener("click", () => { localStorage.removeItem("kt_apikey"); $("#keyInput").value = ""; toast("Schlüssel gelöscht."); closeSheet("keySheet", "keyBackdrop"); });
 $("#keyBackdrop").addEventListener("click", () => closeSheet("keySheet", "keyBackdrop"));
 
+/* ===================== APPLE HEALTH (via Kurzbefehl) ===================== */
+/* Importiert Werte aus ?steps=&burned=&weight=&water= und speichert sie für heute. */
+function importHealthFromUrl() {
+  const q = new URLSearchParams(location.search);
+  if (![...q.keys()].some((k) => ["steps", "burned", "weight", "water"].includes(k))) return;
+  const t = todayKey();
+  const act = loadActivity(t);
+  if (q.has("steps")) act.steps = Math.max(0, Math.round(num(q.get("steps"))));
+  if (q.has("burned")) act.burned = Math.max(0, Math.round(num(q.get("burned"))));
+  saveActivity(t, act);
+  if (q.has("weight") && num(q.get("weight")) > 0) setWeight(t, num(q.get("weight")));
+  if (q.has("water") && num(q.get("water")) > 0) saveWater(t, num(q.get("water")));
+  state.date = t;
+  history.replaceState(null, "", location.pathname); // URL säubern
+  toast("Aus Apple Health übernommen ✓");
+}
+
+function healthImportUrl() {
+  const base = location.origin + location.pathname;
+  return base + "?steps=[Schritte]&burned=[Aktive Energie]";
+}
+$("#healthBtn").addEventListener("click", () => {
+  $("#healthUrl").textContent = healthImportUrl();
+  openSheet("healthSheet", "healthBackdrop");
+});
+$("#healthCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(healthImportUrl()); toast("URL kopiert ✓"); }
+  catch { toast("Kopieren nicht möglich – bitte manuell markieren."); }
+});
+$("#healthClose").addEventListener("click", () => closeSheet("healthSheet", "healthBackdrop"));
+$("#healthBackdrop").addEventListener("click", () => closeSheet("healthSheet", "healthBackdrop"));
+
 /* ---------- Sheet-Helfer ---------- */
 function openSheet(id, bd) { $("#" + bd).classList.remove("hidden"); $("#" + id).classList.remove("hidden"); }
 function closeSheet(id, bd) { $("#" + bd).classList.add("hidden"); $("#" + id).classList.add("hidden"); }
 
 /* ---------- Start ---------- */
+importHealthFromUrl();
 renderDashboard();
 if ("serviceWorker" in navigator)
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

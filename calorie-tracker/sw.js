@@ -1,6 +1,6 @@
 /* Einfacher Service Worker: cached die App-Hülle für Offline-Start.
  * Lebensmittel-Abfragen an Open Food Facts laufen immer live übers Netz. */
-const CACHE = "kaltrack-v3";
+const CACHE = "kaltrack-v4";
 const SHELL = [
   "./",
   "./index.html",

@@ -17,6 +17,9 @@ Läuft komplett im Browser, ganz ohne Server. Das Tagebuch wird lokal auf dem Ge
 - 🔍 **Suche** in der Datenbank (Open Food Facts)
 - 🍽️ **Portionsrechner** — Menge in Gramm → Kalorien & Makros
 - 🏃 **Aktivitäten**: Schritte & verbrannte Kalorien (fließen in „Übrig" ein)
+- 💧 **Wasserzähler** (Gläser à 250 ml, Ziel 2 l)
+- ⚖️ **Gewicht** mit Zielgewicht und Trend
+- 📅 **Tage durchblättern** (‹ ›) + **7-Tage-Verlauf** als Balken
 - 🎯 Einstellbares **Tagesziel** (wird auf die Mahlzeiten aufgeteilt)
 - 📱 **Installierbar** als App auf dem Homescreen (PWA), offline-fähige Hülle
 
@@ -38,11 +41,24 @@ Verlauf, sodass du es beim nächsten Mal mit einem Tap wieder hinzufügen kannst
 Im Bereich **Aktivitäten** kannst du **Schritte** und **verbrannte Kalorien**
 eintragen; die verbrannten Kalorien erhöhen dein „Übrig"-Budget.
 
-> ⚠️ **Automatischer Apple-Health-Sync ist in einer Web-App nicht möglich.** Apple
-> gibt HealthKit (Schritte, aktive Energie) nur **nativen iPhone-Apps** frei –
-> eine Website im Safari hat keinen Zugriff. Für echten Auto-Sync müsste die App in
-> eine native Hülle (z. B. Capacitor + HealthKit-Plugin) verpackt werden – ein
-> eigenes Projekt mit Xcode und Apple-Developer-Account. Bis dahin: manuell eintragen.
+### Apple Health per Kurzbefehl (funktioniert ohne native App)
+
+Eine Web-App kann Apple Health nicht direkt lesen. Aber über die iOS-App
+**Kurzbefehle** kannst du deine Werte an KalTrack übergeben – die App liest sie
+aus der URL. Tippe in der App auf **„🍎 Aus Apple Health importieren"** für die
+Anleitung. Kurzfassung:
+
+1. **Kurzbefehle** → neuer Kurzbefehl
+2. **„Gesundheitsprobendaten abrufen"** → *Schritte* (heute) → Variable
+3. dasselbe für *Aktive Energie* (verbrannte kcal)
+4. Aktion **„URLs öffnen"** mit:
+   `…/calorie-tracker/?steps=SCHRITTE&burned=KCAL`
+   (die Variablen einsetzen)
+
+Beim Öffnen übernimmt KalTrack `steps`, `burned` (und optional `weight`, `water`)
+in den heutigen Tag. So kannst du den Kurzbefehl auch automatisieren (z. B. jeden
+Abend). Ein **echter Hintergrund-Sync** bräuchte weiterhin eine native App
+(Capacitor + HealthKit).
 
 ## Foto-Kalorienschätzung
 

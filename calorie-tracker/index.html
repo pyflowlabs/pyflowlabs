@@ -14,8 +14,10 @@
 
   <!-- ===================== DASHBOARD ===================== -->
   <header class="topbar">
-    <div class="brand">🍎 Heute</div>
-    <button id="dateBtn" class="date-pill" type="button">Tagesziel</button>
+    <button id="prevDay" class="icon-btn" type="button">‹</button>
+    <button id="dayLabel" class="brand day-label" type="button">Heute</button>
+    <button id="nextDay" class="icon-btn" type="button">›</button>
+    <button id="dateBtn" class="date-pill" type="button">Ziel</button>
   </header>
 
   <main class="content" id="dashboard">
@@ -61,6 +63,38 @@
     <h2 class="section-title">Ernährung</h2>
     <div id="mealCards"></div>
 
+    <!-- Wasser -->
+    <h2 class="section-title">Wasser</h2>
+    <section class="tile">
+      <div class="tile-center">
+        <div class="tile-sub">Ziel: <span id="waterGoal">2,0</span> l</div>
+        <div class="tile-big" id="waterVal">0,00 l</div>
+      </div>
+      <div class="glasses" id="glasses"></div>
+      <div class="tile-actions">
+        <button id="waterMinus" type="button" class="round-btn">－</button>
+        <span class="tile-hint">1 Glas = 250 ml</span>
+        <button id="waterPlus" type="button" class="round-btn">＋</button>
+      </div>
+    </section>
+
+    <!-- Körperwerte -->
+    <h2 class="section-title">Körperwerte</h2>
+    <section class="tile">
+      <div class="tile-center">
+        <div class="tile-sub">Gewicht · Ziel: <span id="weightGoal">–</span></div>
+      </div>
+      <div class="weight-row">
+        <button id="weightMinus" type="button" class="round-btn">－</button>
+        <div class="tile-big" id="weightVal">– kg</div>
+        <button id="weightPlus" type="button" class="round-btn">＋</button>
+      </div>
+      <div class="tile-actions">
+        <button id="weightGoalBtn" type="button" class="link-btn">Zielgewicht einstellen</button>
+        <span class="tile-hint" id="weightTrend"></span>
+      </div>
+    </section>
+
     <!-- Aktivitäten -->
     <h2 class="section-title">Aktivitäten</h2>
     <section class="activity-card">
@@ -71,8 +105,14 @@
         </div>
         <button id="activityBtn" type="button" class="mini-add">＋</button>
       </div>
-      <p class="act-note">Trägst du Schritte &amp; Kalorien in Apple Health? Auto-Sync braucht eine
-        native App – hier vorerst manuell eintragen.</p>
+      <button id="healthBtn" type="button" class="link-btn health-link">🍎 Aus Apple Health importieren (Kurzbefehl)</button>
+    </section>
+
+    <!-- Verlauf -->
+    <h2 class="section-title">Verlauf (7 Tage)</h2>
+    <section class="tile">
+      <div class="chart" id="weekChart"></div>
+      <div class="chart-legend"><span class="dot"></span>gegessen · <span class="dot muted"></span>Ziel</div>
     </section>
   </main>
 
@@ -204,6 +244,48 @@
     <div class="sheet-actions">
       <button id="actCancel" type="button" class="ghost">Abbrechen</button>
       <button id="actSave" type="button" class="primary">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Zielgewicht-Dialog -->
+  <div class="sheet-backdrop hidden" id="wgBackdrop"></div>
+  <div class="sheet hidden" id="wgSheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><div class="p-name">Gewicht</div></div>
+    <label class="p-amount">
+      Aktuelles Gewicht (kg)
+      <input id="weightInput" type="number" min="20" step="0.1" inputmode="decimal" />
+    </label>
+    <label class="p-amount">
+      Zielgewicht (kg)
+      <input id="weightGoalInput" type="number" min="20" step="0.1" inputmode="decimal" />
+    </label>
+    <div class="sheet-actions">
+      <button id="wgCancel" type="button" class="ghost">Abbrechen</button>
+      <button id="wgSave" type="button" class="primary">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Health-Hilfe-Dialog -->
+  <div class="sheet-backdrop hidden" id="healthBackdrop"></div>
+  <div class="sheet hidden" id="healthSheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><div class="p-name">🍎 Apple Health verbinden</div></div>
+    <p class="p-per100">Eine Web-App kann Health nicht direkt lesen – aber du kannst
+      deine Werte mit einem <b>Kurzbefehl</b> (App „Kurzbefehle") übergeben. Einmal
+      einrichten, dann ein Tap pro Tag:</p>
+    <ol class="help-list">
+      <li>App <b>Kurzbefehle</b> → neuer Kurzbefehl</li>
+      <li><b>„Gesundheitsprobendaten abrufen"</b> → <i>Schritte</i> (heute) → in Variable</li>
+      <li>Nochmal für <i>Aktive Energie</i> (verbrannte kcal)</li>
+      <li>Aktion <b>„URLs öffnen"</b> mit dieser Adresse (Werte einsetzen):</li>
+    </ol>
+    <div class="code-box" id="healthUrl"></div>
+    <p class="p-per100">Beim Öffnen dieser URL übernimmt KalTrack Schritte &amp; Kalorien
+      automatisch in den heutigen Tag.</p>
+    <div class="sheet-actions">
+      <button id="healthCopy" type="button" class="ghost">URL kopieren</button>
+      <button id="healthClose" type="button" class="primary">Alles klar</button>
     </div>
   </div>
 
