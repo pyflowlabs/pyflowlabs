@@ -11,93 +11,144 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Kopfzeile -->
+
+  <!-- ===================== DASHBOARD ===================== -->
   <header class="topbar">
-    <div class="brand">🍎 KalTrack</div>
-    <button id="dateBtn" class="date-pill" type="button">Heute</button>
+    <div class="brand">🍎 Heute</div>
+    <button id="dateBtn" class="date-pill" type="button">Tagesziel</button>
   </header>
 
-  <!-- Tagesübersicht -->
-  <section class="summary" id="summary">
-    <div class="ring-wrap">
-      <svg viewBox="0 0 120 120" class="ring">
-        <circle class="ring-bg" cx="60" cy="60" r="52" />
-        <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52" />
-      </svg>
-      <div class="ring-center">
-        <div class="ring-kcal" id="kcalEaten">0</div>
-        <div class="ring-goal" id="kcalGoal">/ 2000 kcal</div>
-        <div class="ring-left" id="kcalLeft">2000 übrig</div>
+  <main class="content" id="dashboard">
+    <!-- Übersicht -->
+    <h2 class="section-title">Übersicht</h2>
+    <section class="summary">
+      <div class="stat">
+        <div class="stat-val" id="kcalEaten">0</div>
+        <div class="stat-lbl">Gegessen</div>
       </div>
-    </div>
+      <div class="ring-wrap">
+        <svg viewBox="0 0 120 120" class="ring">
+          <circle class="ring-bg" cx="60" cy="60" r="52" />
+          <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52" />
+        </svg>
+        <div class="ring-center">
+          <div class="ring-kcal" id="kcalLeft">0</div>
+          <div class="ring-goal">Übrig</div>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="kcalBurned">0</div>
+        <div class="stat-lbl">Verbrannt</div>
+      </div>
+    </section>
+
     <div class="macros">
-      <div class="macro"><span class="macro-val" id="mProt">0 g</span><span class="macro-lbl">Eiweiß</span></div>
-      <div class="macro"><span class="macro-val" id="mCarb">0 g</span><span class="macro-lbl">Kohlenh.</span></div>
-      <div class="macro"><span class="macro-val" id="mFat">0 g</span><span class="macro-lbl">Fett</span></div>
+      <div class="macro">
+        <div class="macro-top"><span>Kohlenhydrate</span><span id="mCarb">0 / 0 g</span></div>
+        <div class="bar"><div class="bar-fill" id="barCarb"></div></div>
+      </div>
+      <div class="macro">
+        <div class="macro-top"><span>Eiweiß</span><span id="mProt">0 / 0 g</span></div>
+        <div class="bar"><div class="bar-fill" id="barProt"></div></div>
+      </div>
+      <div class="macro">
+        <div class="macro-top"><span>Fett</span><span id="mFat">0 / 0 g</span></div>
+        <div class="bar"><div class="bar-fill" id="barFat"></div></div>
+      </div>
     </div>
-  </section>
 
-  <!-- Ansichten -->
-  <main class="content">
-    <!-- Tagebuch -->
-    <section class="view" id="view-diary">
-      <h2 class="view-title">Tagebuch</h2>
-      <ul class="entry-list" id="entryList"></ul>
-      <p class="empty" id="diaryEmpty">Noch nichts gegessen heute. Tippe unten auf <b>Suchen</b> oder <b>Scannen</b>. 🙂</p>
-    </section>
+    <!-- Ernährung -->
+    <h2 class="section-title">Ernährung</h2>
+    <div id="mealCards"></div>
 
-    <!-- Suche -->
-    <section class="view hidden" id="view-search">
-      <h2 class="view-title">Lebensmittel suchen</h2>
-      <div class="searchbar">
-        <input id="searchInput" type="search" inputmode="search" placeholder="z. B. Haferflocken, Banane, Milch…" autocomplete="off" />
-        <button id="searchBtn" type="button">Suchen</button>
+    <!-- Aktivitäten -->
+    <h2 class="section-title">Aktivitäten</h2>
+    <section class="activity-card">
+      <div class="act-row">
+        <div>
+          <div class="act-steps" id="actSteps">0 Schritte</div>
+          <div class="act-sub" id="actSub">0 kcal verbrannt</div>
+        </div>
+        <button id="activityBtn" type="button" class="mini-add">＋</button>
       </div>
-      <p class="hint" id="searchHint">Tippe einen Namen ein und drücke Suchen.</p>
-      <ul class="result-list" id="searchResults"></ul>
-    </section>
-
-    <!-- Scannen -->
-    <section class="view hidden" id="view-scan">
-      <h2 class="view-title">Barcode scannen</h2>
-      <div class="scanner">
-        <video id="video" playsinline muted></video>
-        <div class="scan-frame"></div>
-      </div>
-      <div class="scan-actions">
-        <button id="startScanBtn" type="button" class="primary">📷 Kamera starten</button>
-        <button id="stopScanBtn" type="button" class="ghost hidden">Stoppen</button>
-      </div>
-      <p class="hint" id="scanHint">Halte den Barcode ins grüne Feld. Klappt die Kamera nicht, gib den Code manuell ein.</p>
-      <div class="manual">
-        <input id="manualBarcode" type="text" inputmode="numeric" placeholder="Barcode-Nummer eingeben" />
-        <button id="manualBtn" type="button">Suchen</button>
-      </div>
-    </section>
-
-    <!-- Foto (KI-Schätzung) -->
-    <section class="view hidden" id="view-photo">
-      <h2 class="view-title">Foto vom Essen 🤖</h2>
-      <label class="photo-pick" id="photoPick">
-        <input id="photoInput" type="file" accept="image/*" capture="environment" hidden />
-        <img id="photoPreview" class="photo-preview hidden" alt="Vorschau" />
-        <span id="photoPlaceholder">📸 Tippen, um ein Foto aufzunehmen oder auszuwählen</span>
-      </label>
-      <button id="estimateBtn" type="button" class="primary hidden">🆓 Kalorien erkennen (gratis)</button>
-      <button id="aiEstimateBtn" type="button" class="ghost hidden">🤖 Genauer mit KI (kostenpflichtig)</button>
-      <div id="estimateResult"></div>
-      <p class="hint" id="photoHint">Die Erkennung läuft gratis direkt auf deinem Gerät. Sie erkennt gängige Lebensmittel und schätzt eine typische Portion – immer ungefähr.</p>
-      <button id="apiKeyBtn" type="button" class="ghost apikey-btn">🔑 KI-Schlüssel (optional, für die genaue Variante)</button>
+      <p class="act-note">Trägst du Schritte &amp; Kalorien in Apple Health? Auto-Sync braucht eine
+        native App – hier vorerst manuell eintragen.</p>
     </section>
   </main>
 
-  <!-- Untere Navigation -->
-  <nav class="tabbar">
-    <button class="tab active" data-view="diary" type="button"><span>📖</span>Tagebuch</button>
-    <button class="tab" data-view="search" type="button"><span>🔍</span>Suchen</button>
-    <button class="tab" data-view="scan" type="button"><span>📷</span>Scannen</button>
-    <button class="tab" data-view="photo" type="button"><span>📸</span>Foto</button>
-  </nav>
+  <!-- ===================== MAHLZEIT-DETAIL ===================== -->
+  <div class="screen hidden" id="mealDetail">
+    <header class="topbar">
+      <button id="mealBack" class="icon-btn" type="button">‹</button>
+      <div class="brand" id="mealTitle">Frühstück</div>
+      <div class="date-pill" id="mealTotal">0 / 0</div>
+    </header>
+
+    <div class="content">
+      <!-- bereits gegessen -->
+      <ul class="entry-list" id="mealEntries"></ul>
+
+      <!-- Methoden -->
+      <div class="methods">
+        <button class="method active" data-method="search" type="button"><span>🔍</span>Suche</button>
+        <button class="method" data-method="scan" type="button"><span>📷</span>Barcode</button>
+        <button class="method" data-method="photo" type="button"><span>📸</span>Foto</button>
+      </div>
+
+      <!-- Panel: Suche -->
+      <section class="panel" id="panel-search">
+        <div class="searchbar">
+          <input id="searchInput" type="search" inputmode="search" placeholder="Was hattest du?" autocomplete="off" />
+          <button id="searchBtn" type="button">Suchen</button>
+        </div>
+        <div class="filter-row">
+          <button id="filterBtn" class="filter-pill" type="button">Häufig ▾</button>
+        </div>
+        <p class="hint" id="searchHint"></p>
+        <ul class="result-list" id="foodList"></ul>
+      </section>
+
+      <!-- Panel: Barcode -->
+      <section class="panel hidden" id="panel-scan">
+        <div class="scanner">
+          <video id="video" playsinline muted></video>
+          <div class="scan-frame"></div>
+        </div>
+        <div class="scan-actions">
+          <button id="startScanBtn" type="button" class="primary">📷 Kamera starten</button>
+          <button id="stopScanBtn" type="button" class="ghost hidden">Stoppen</button>
+        </div>
+        <p class="hint" id="scanHint">Halte den Barcode ins grüne Feld.</p>
+        <div class="manual">
+          <input id="manualBarcode" type="text" inputmode="numeric" placeholder="Barcode-Nummer eingeben" />
+          <button id="manualBtn" type="button">Suchen</button>
+        </div>
+      </section>
+
+      <!-- Panel: Foto -->
+      <section class="panel hidden" id="panel-photo">
+        <label class="photo-pick" id="photoPick">
+          <input id="photoInput" type="file" accept="image/*" capture="environment" hidden />
+          <img id="photoPreview" class="photo-preview hidden" alt="Vorschau" />
+          <span id="photoPlaceholder">📸 Tippen, um ein Foto aufzunehmen</span>
+        </label>
+        <button id="estimateBtn" type="button" class="primary hidden">🆓 Kalorien erkennen (gratis)</button>
+        <button id="aiEstimateBtn" type="button" class="ghost hidden">🤖 Genauer mit KI (kostenpflichtig)</button>
+        <div id="estimateResult"></div>
+        <p class="hint" id="photoHint">Gratis-Erkennung direkt auf dem Gerät – gängige Lebensmittel, typische Portion.</p>
+        <button id="apiKeyBtn" type="button" class="ghost apikey-btn">🔑 KI-Schlüssel (optional)</button>
+      </section>
+    </div>
+
+    <div class="done-bar"><button id="mealDone" type="button" class="primary">Fertig</button></div>
+  </div>
+
+  <!-- Filter-Menü -->
+  <div class="menu hidden" id="filterMenu">
+    <button data-filter="frequent" type="button">Häufig</button>
+    <button data-filter="recent" type="button">Zuletzt</button>
+    <button data-filter="fav" type="button">Favoriten</button>
+  </div>
 
   <!-- Portions-Dialog -->
   <div class="sheet-backdrop hidden" id="sheetBackdrop"></div>
@@ -137,13 +188,32 @@
     </div>
   </div>
 
+  <!-- Aktivitäts-Dialog -->
+  <div class="sheet-backdrop hidden" id="actBackdrop"></div>
+  <div class="sheet hidden" id="actSheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><div class="p-name">Aktivität heute</div></div>
+    <label class="p-amount">
+      Schritte
+      <input id="stepsInput" type="number" min="0" step="100" value="0" inputmode="numeric" />
+    </label>
+    <label class="p-amount">
+      Verbrannte Kalorien (kcal)
+      <input id="burnedInput" type="number" min="0" step="10" value="0" inputmode="numeric" />
+    </label>
+    <div class="sheet-actions">
+      <button id="actCancel" type="button" class="ghost">Abbrechen</button>
+      <button id="actSave" type="button" class="primary">Speichern</button>
+    </div>
+  </div>
+
   <!-- API-Key-Dialog -->
   <div class="sheet-backdrop hidden" id="keyBackdrop"></div>
   <div class="sheet hidden" id="keySheet" role="dialog" aria-modal="true">
     <div class="sheet-handle"></div>
     <div class="sheet-head"><div class="p-name">KI-Schlüssel (Anthropic)</div></div>
-    <p class="p-per100">Die Foto-Schätzung nutzt Claude. Du brauchst einen eigenen API-Schlüssel von
-      console.anthropic.com. Er wird nur lokal auf deinem Gerät gespeichert und direkt an Anthropic gesendet.</p>
+    <p class="p-per100">Nur für die genaue Foto-Variante. Der Schlüssel bleibt lokal auf dem Gerät
+      und wird direkt an Anthropic gesendet.</p>
     <label class="p-amount">
       API-Schlüssel (sk-ant-…)
       <input id="keyInput" type="password" placeholder="sk-ant-..." autocomplete="off" />

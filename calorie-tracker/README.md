@@ -9,14 +9,40 @@ Läuft komplett im Browser, ganz ohne Server. Das Tagebuch wird lokal auf dem Ge
 
 ## Funktionen
 
-- 📷 **Barcode scannen** mit der Handy-Kamera → Produkt wird automatisch gefunden (Android **und iOS**)
-- 📸 **Foto vom Essen → Kalorien automatisch** (gratis, direkt auf dem Gerät; optional genauere KI)
-- 🔍 **Suche** in der Datenbank nach Namen (z. B. „Haferflocken")
-- ⌨️ **Manuelle Barcode-Eingabe** als Fallback
-- 🍽️ **Portionsrechner** — Menge in Gramm eingeben, Kalorien & Makros werden berechnet
-- 📖 **Tagebuch** mit Tagesübersicht (Kalorien-Ring + Eiweiß / Kohlenhydrate / Fett)
-- 🎯 Einstellbares **Tagesziel**
+- 📊 **Dashboard** wie gewohnt: Gegessen / Übrig / Verbrannt + Makro-Balken
+- 🍳🍝🍽️🍎 **Mahlzeiten**: Frühstück, Mittagessen, Abendessen, Snacks – jeweils mit eigenem Ziel
+- 🗂️ **Filter im Mahlzeit-Detail**: **Häufig**, **Zuletzt**, **Favoriten** (mit ⭐)
+- 📷 **Barcode scannen** mit der Handy-Kamera (Android **und iOS**)
+- 📸 **Foto vom Essen → Kalorien automatisch** (gratis auf dem Gerät; optional genauere KI)
+- 🔍 **Suche** in der Datenbank (Open Food Facts)
+- 🍽️ **Portionsrechner** — Menge in Gramm → Kalorien & Makros
+- 🏃 **Aktivitäten**: Schritte & verbrannte Kalorien (fließen in „Übrig" ein)
+- 🎯 Einstellbares **Tagesziel** (wird auf die Mahlzeiten aufgeteilt)
 - 📱 **Installierbar** als App auf dem Homescreen (PWA), offline-fähige Hülle
+
+## Mahlzeiten & Filter
+
+Auf dem Dashboard tippst du auf eine Mahlzeit (z. B. **Frühstück**) und kommst ins
+Detail. Dort gibt es **Suche / Barcode / Foto** zum Hinzufügen und darüber eine
+Liste, die du filtern kannst:
+
+- **Häufig** — was du am öftesten isst
+- **Zuletzt** — zuletzt gegessene Lebensmittel
+- **Favoriten** — mit dem ⭐ markierte Lieblinge
+
+Alles, was du per Suche oder Barcode hinzufügst, landet automatisch in diesem
+Verlauf, sodass du es beim nächsten Mal mit einem Tap wieder hinzufügen kannst.
+
+## Aktivitäten & Apple Health
+
+Im Bereich **Aktivitäten** kannst du **Schritte** und **verbrannte Kalorien**
+eintragen; die verbrannten Kalorien erhöhen dein „Übrig"-Budget.
+
+> ⚠️ **Automatischer Apple-Health-Sync ist in einer Web-App nicht möglich.** Apple
+> gibt HealthKit (Schritte, aktive Energie) nur **nativen iPhone-Apps** frei –
+> eine Website im Safari hat keinen Zugriff. Für echten Auto-Sync müsste die App in
+> eine native Hülle (z. B. Capacitor + HealthKit-Plugin) verpackt werden – ein
+> eigenes Projekt mit Xcode und Apple-Developer-Account. Bis dahin: manuell eintragen.
 
 ## Foto-Kalorienschätzung
 
