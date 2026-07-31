@@ -11,6 +11,12 @@ OLLAMA_HOST = "http://localhost:11434"
 # SearxNG-Websuche (aus dem Docker-Stack)
 SEARXNG_URL = "http://localhost:8888"
 
+# --- Mixture of Agents ----------------------------------------------------
+# Mehrere Modelle antworten auf dieselbe Aufgabe, ein Aggregator-Modell baut
+# daraus die beste finale Antwort. Modelle müssen installiert sein.
+MOA_PROPOSERS = ["qwen2.5-coder:32b", "dolphin-mixtral:latest"]
+MOA_AGGREGATOR = "qwen2.5-coder:32b"
+
 # --- Dein System-Prompt / deine Regeln ------------------------------------
 # Das ist die "Persönlichkeit" und das Regelwerk deiner KI. Neutral und direkt,
 # ohne fremde Filter — nur deine eigenen Vorgaben. Ändere alles nach Bedarf.
