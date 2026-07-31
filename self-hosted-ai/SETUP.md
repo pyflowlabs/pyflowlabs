@@ -38,25 +38,25 @@ Beim ersten Mal werden die Images geladen (ein paar Minuten).
 
 ---
 
-## Erstes Modell laden
+## Modelle laden
 
-Empfehlung für deine 16 GB VRAM — **Coder & Allrounder**, passt komplett in die GPU:
+Ausrichtung: **Fähigkeit vor Tempo.** Hauptmodell ist das starke 32B —
+für komplexe Aufgaben, Programmieren und Werkzeug-Nutzung:
 
 ```bash
-docker exec -it ollama ollama pull qwen2.5-coder:14b
+# HAUPTMODELL – stark bei komplexen Tasks, Programmieren, Tool-Calling
+# (~19 GB Q4: läuft, teils im RAM ausgelagert -> langsamer, aber leistungsfähig)
+docker exec -it ollama ollama pull qwen2.5-coder:32b
 ```
 
 Optional weitere Modelle:
 
 ```bash
-# schnell & leicht
-docker exec -it ollama ollama pull llama3.1:8b
-
-# Reasoning / Planung
+# Reasoning / Planung, passt komplett in VRAM
 docker exec -it ollama ollama pull deepseek-r1:14b
 
-# maximale Qualitaet (laeuft, aber langsamer – teils im RAM)
-docker exec -it ollama ollama pull qwen2.5:32b
+# schneller Fallback für Einfaches, komplett in VRAM
+docker exec -it ollama ollama pull qwen2.5-coder:14b
 ```
 
 ---
@@ -65,8 +65,11 @@ docker exec -it ollama ollama pull qwen2.5:32b
 
 1. Browser öffnen: **http://localhost:3000**
 2. Erstes Konto anlegen (bleibt lokal auf deiner Maschine — kein Cloud-Login).
-3. Oben das Modell `qwen2.5-coder:14b` wählen.
+3. Oben das Modell `qwen2.5-coder:32b` wählen.
 4. Losschreiben.
+
+> Websuche des Agenten läuft über **SearxNG** unter http://localhost:8888
+> (im Stack enthalten). Für den autonomen Agenten mit Werkzeugen siehe `agent/README.md`.
 
 ---
 

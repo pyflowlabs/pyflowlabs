@@ -1,12 +1,13 @@
-# Phase 1 – Eigene lokale KI
+# Eigene lokale KI – Stack
 # Hardware-Profil: RTX 4080 Super (16 GB VRAM) · 32 GB DDR5
 #
-# Startet zwei Dienste:
+# Dienste:
 #   - ollama      : führt das Modell auf der GPU aus, stellt eine API bereit
 #   - open-webui  : Chat-Oberfläche im Browser (wie ChatGPT), self-hosted
+#   - searxng     : neutrale Meta-Websuche (für Deep Search & Scraping des Agenten)
 #
 # Start:   docker compose up -d
-# Öffnen:  http://localhost:3000
+# Öffnen:  http://localhost:3000   (Chat)      ·  http://localhost:8888 (Suche)
 # Stoppen: docker compose down
 
 services:
@@ -42,6 +43,17 @@ services:
       - WEBUI_AUTH=true          # eigenes Login (bleibt lokal auf deiner Maschine)
     depends_on:
       - ollama
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+    ports:
+      - "8888:8080"              # Websuche-API: http://localhost:8888
+    volumes:
+      - ./searxng:/etc/searxng   # eigene Konfiguration (JSON-Ausgabe aktiviert)
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
 
 volumes:
   ollama:

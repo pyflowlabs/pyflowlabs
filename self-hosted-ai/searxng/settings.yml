@@ -1,0 +1,22 @@
+# SearxNG – minimale Konfiguration für die eigene KI
+# Wichtig: JSON-Ausgabe ist aktiviert, damit der Python-Agent die Suche als API nutzen kann.
+
+use_default_settings: true
+
+server:
+  # WICHTIG: vor dem ersten echten Einsatz durch einen eigenen Zufallswert ersetzen, z. B.:
+  #   python -c "import secrets; print(secrets.token_hex(32))"
+  secret_key: "BITTE-AENDERN-eigenen-zufallswert-eintragen"
+  limiter: false            # lokal, keine Rate-Limits nötig
+  image_proxy: true
+
+search:
+  # json aktiviert die API-Nutzung durch den Agenten (Standard erlaubt nur html)
+  formats:
+    - html
+    - json
+  autocomplete: "duckduckgo"
+  default_lang: "de"
+
+ui:
+  default_locale: "de"
