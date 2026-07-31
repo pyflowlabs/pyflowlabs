@@ -1,13 +1,14 @@
-# Eigene lokale KI – Stack
+# NERO QUANTUM – lokaler KI-Stack
 # Hardware-Profil: RTX 4080 Super (16 GB VRAM) · 32 GB DDR5
 #
 # Dienste:
 #   - ollama      : führt das Modell auf der GPU aus, stellt eine API bereit
-#   - open-webui  : Chat-Oberfläche im Browser (wie ChatGPT), self-hosted
+#   - nero-quantum: Chat-Oberfläche im Browser (Claude-artig), self-hosted
 #   - searxng     : neutrale Meta-Websuche (für Deep Search & Scraping des Agenten)
 #
-# Start:   docker compose up -d
-# Öffnen:  http://localhost:3000   (Chat)      ·  http://localhost:8888 (Suche)
+# Bequemer Start:  ./install.sh   (Linux/macOS)   bzw.   install.ps1 (Windows)
+# Manuell:         docker compose up -d
+# Öffnen:  http://localhost:3000   (NERO QUANTUM)  ·  http://localhost:8888 (Suche)
 # Stoppen: docker compose down
 
 services:
@@ -30,17 +31,18 @@ services:
               count: all         # GPU an den Container durchreichen
               capabilities: [gpu]
 
-  open-webui:
+  nero-quantum:
     image: ghcr.io/open-webui/open-webui:main
-    container_name: open-webui
+    container_name: nero-quantum
     restart: unless-stopped
     ports:
       - "3000:8080"              # Browser-Oberflaeche: http://localhost:3000
     volumes:
-      - open-webui:/app/backend/data
+      - nero-quantum:/app/backend/data
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - WEBUI_AUTH=true          # eigenes Login (bleibt lokal auf deiner Maschine)
+      - WEBUI_NAME=NERO QUANTUM   # Name/Branding der Oberfläche
     depends_on:
       - ollama
 
@@ -57,4 +59,4 @@ services:
 
 volumes:
   ollama:
-  open-webui:
+  nero-quantum:
