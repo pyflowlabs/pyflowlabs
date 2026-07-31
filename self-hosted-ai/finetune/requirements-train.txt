@@ -1,0 +1,4 @@
+# Für den Trainingslauf (train.py) – auf dem PC mit GPU installieren.
+# Unsloth bringt die passenden torch/transformers/peft/trl-Versionen mit.
+unsloth
+datasets>=2.18.0
