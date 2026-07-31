@@ -6,6 +6,18 @@
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 
+# --- Protokollierung: alles zusaetzlich in install.log schreiben -----------
+$LogFile = Join-Path $PSScriptRoot "install.log"
+try { Start-Transcript -Path $LogFile -Append | Out-Null } catch {}
+trap {
+  Write-Host ""
+  Write-Host "  [FEHLER] $($_.Exception.Message)"
+  Write-Host "  Vollstaendiges Protokoll: $LogFile"
+  Write-Host "  Bei Problemen: diese Datei (oder ihre letzten Zeilen) schicken."
+  try { Stop-Transcript | Out-Null } catch {}
+  exit 1
+}
+
 $Name = @(
   "qwen2.5-coder:32b",
   "qwen2.5-coder:14b",
@@ -81,5 +93,7 @@ Write-Host "   NERO QUANTUM laeuft.  ->  http://localhost:3000"
 Write-Host "   Websuche:                 http://localhost:8888"
 Write-Host "   Modelle waehlst du oben in der Oberflaeche per Dropdown."
 Write-Host "   Stoppen:  docker compose down"
+Write-Host "   Protokoll dieses Laufs: $LogFile"
 Write-Host "  =============================================="
 Write-Host ""
+try { Stop-Transcript | Out-Null } catch {}

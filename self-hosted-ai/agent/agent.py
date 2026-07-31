@@ -14,7 +14,10 @@ import json
 import ollama
 
 import config
+import logsetup
 import tools
+
+log, LOG_FILE = logsetup.setup("nero.agent")
 
 # Höchstzahl Werkzeug-Runden pro Aufgabe (Schutz vor Endlosschleifen).
 MAX_STEPS = 12
@@ -56,7 +59,15 @@ def run(task: str, messages: list | None = None) -> list:
             print(f"   ⚙️  {name}({', '.join(f'{k}={str(v)[:50]}' for k, v in args.items())})")
 
             func = tools.DISPATCH.get(name)
-            result = func(**args) if func else f"Unbekanntes Werkzeug: {name}"
+            if not func:
+                result = f"Unbekanntes Werkzeug: {name}"
+                log.warning(result)
+            else:
+                try:
+                    result = func(**args)
+                except Exception as exc:  # noqa: BLE001
+                    result = f"Werkzeug '{name}' ist abgestürzt: {exc}"
+                    log.exception("Werkzeug %s fehlgeschlagen (args=%s)", name, args)
 
             messages.append({"role": "tool", "name": name, "content": str(result)})
 
@@ -66,7 +77,8 @@ def run(task: str, messages: list | None = None) -> list:
 
 def main() -> None:
     print("Lokaler Agent bereit. Aufgabe eingeben (oder 'exit').")
-    print(f"Modell: {config.MODEL}\n")
+    print(f"Modell: {config.MODEL}")
+    print(f"Protokoll: {LOG_FILE}\n")
     history: list | None = None
     while True:
         try:

@@ -117,11 +117,25 @@ Stoppen: `docker compose down` · Neustart: `./install.sh` oder `docker compose 
 
 ---
 
+## Fehler & Logs (wo du im Problemfall nachschaust)
+Alles schreibt klare Meldungen **und** persistente Log-Dateien:
+
+| Quelle | Wo | Was |
+| --- | --- | --- |
+| **Installer** | `self-hosted-ai/install.log` | kompletter Setup-Lauf; bei Abbruch Zeile + Ursache |
+| **Agent / MoA** | `self-hosted-ai/logs/nero-agent.log` | Werkzeug- und Laufzeitfehler mit Traceback |
+| **Dienste** (Docker) | `docker compose logs -f` | Ollama, Oberfläche, SearxNG, ComfyUI |
+| **einzelner Dienst** | `docker compose logs -f <name>` | z. B. `nero-quantum`, `comfyui`, `ollama` |
+
+Wenn etwas hakt: die passende Log-Datei (oder ihre letzten Zeilen) schicken —
+darin steht die eindeutige Fehlerursache.
+
 ## Nützliche Befehle
 ```bash
 docker exec -it ollama ollama list          # installierte Modelle
 docker exec -it ollama ollama pull <name>   # Modell hinzufügen
 docker exec -it ollama ollama rm <name>     # Modell entfernen
 docker exec ollama ollama stop <name>       # Modell aus dem VRAM werfen
-docker compose logs -f                       # Logs
+docker compose logs -f                       # Logs aller Dienste
+docker compose logs -f comfyui               # Log eines Dienstes
 ```

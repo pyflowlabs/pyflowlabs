@@ -9,6 +9,7 @@ Neue Fähigkeiten fügst du hinzu, indem du eine Funktion schreibst und ihr
 Schema in TOOLS_SPEC einträgst — mehr nicht.
 """
 
+import logging
 import os
 import subprocess
 import sys
@@ -17,6 +18,8 @@ import requests
 from bs4 import BeautifulSoup
 
 import config
+
+log = logging.getLogger("nero.tools")
 
 
 # --- Websuche (Deep Search über SearxNG) ----------------------------------
@@ -31,6 +34,7 @@ def web_search(query: str, num_results: int = 8) -> str:
         resp.raise_for_status()
         results = resp.json().get("results", [])[:num_results]
     except Exception as exc:  # noqa: BLE001
+        log.warning("web_search fehlgeschlagen (query=%r): %s", query, exc)
         return f"Suche fehlgeschlagen: {exc}"
 
     if not results:
@@ -56,6 +60,7 @@ def fetch_page(url: str) -> str:
         )
         resp.raise_for_status()
     except Exception as exc:  # noqa: BLE001
+        log.warning("fetch_page fehlgeschlagen (url=%r): %s", url, exc)
         return f"Konnte Seite nicht laden: {exc}"
 
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -89,6 +94,7 @@ def read_file(path: str) -> str:
         with open(_safe_path(path), "r", encoding="utf-8") as fh:
             return fh.read()
     except Exception as exc:  # noqa: BLE001
+        log.warning("read_file fehlgeschlagen (path=%r): %s", path, exc)
         return f"Konnte Datei nicht lesen: {exc}"
 
 
@@ -101,6 +107,7 @@ def write_file(path: str, content: str) -> str:
             fh.write(content)
         return f"Gespeichert: {path} ({len(content)} Zeichen)"
     except Exception as exc:  # noqa: BLE001
+        log.warning("write_file fehlgeschlagen (path=%r): %s", path, exc)
         return f"Konnte Datei nicht schreiben: {exc}"
 
 
@@ -120,8 +127,10 @@ def run_python(code: str) -> str:
             cwd=os.path.abspath(config.WORKSPACE_DIR),
         )
     except subprocess.TimeoutExpired:
+        log.warning("run_python: Zeitlimit (%ss) überschritten.", config.CODE_TIMEOUT)
         return f"Abgebrochen: Code lief länger als {config.CODE_TIMEOUT}s."
     except Exception as exc:  # noqa: BLE001
+        log.warning("run_python fehlgeschlagen: %s", exc)
         return f"Ausführung fehlgeschlagen: {exc}"
 
     out = result.stdout.strip()

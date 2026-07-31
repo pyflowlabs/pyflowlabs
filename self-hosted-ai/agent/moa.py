@@ -16,6 +16,9 @@ Modelle festlegen in config.py -> MOA_PROPOSERS / MOA_AGGREGATOR.
 import ollama
 
 import config
+import logsetup
+
+log, LOG_FILE = logsetup.setup("nero.moa")
 
 
 def ask_moa(task: str, proposers=None, aggregator=None):
@@ -56,7 +59,8 @@ def ask_moa(task: str, proposers=None, aggregator=None):
 def main() -> None:
     print("Mixture of Agents bereit.")
     print(f"Proposer: {', '.join(config.MOA_PROPOSERS)}")
-    print(f"Aggregator: {config.MOA_AGGREGATOR}\n")
+    print(f"Aggregator: {config.MOA_AGGREGATOR}")
+    print(f"Protokoll: {LOG_FILE}\n")
     while True:
         try:
             task = input("👤 ").strip()

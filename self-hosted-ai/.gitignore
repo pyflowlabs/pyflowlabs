@@ -1,0 +1,12 @@
+# Generierte Protokolle & Artefakte (nicht ins Repo)
+install.log
+logs/
+agent/workspace/
+agent/.venv/
+agent/.venv-train/
+finetune/outputs/
+finetune/.venv-train/
+comfyui/models/
+comfyui/output/
+__pycache__/
+*.pyc

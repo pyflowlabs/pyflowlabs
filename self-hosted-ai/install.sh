@@ -7,6 +7,14 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# --- Protokollierung: alles zusaetzlich in install.log schreiben -----------
+LOG="$(pwd)/install.log"
+exec > >(tee -a "$LOG") 2>&1
+echo "===== NERO QUANTUM Install-Lauf ($(date '+%F %T')) ====="
+trap 'ec=$?; echo ""; echo "  [FEHLER] Abbruch in Zeile $LINENO (Code $ec).";
+      echo "  Vollstaendiges Protokoll: $LOG";
+      echo "  Bei Problemen: diese Datei (oder ihre letzten Zeilen) schicken.";' ERR
+
 # Kuratiertes Menue (klar legitime Modelle). Eigene/uncensored Modelle
 # fuegst du ueber Punkt [C] als Ollama- oder HuggingFace-GGUF-Namen hinzu.
 declare -a NAME=(
@@ -94,5 +102,6 @@ echo "   Websuche:                 http://localhost:8888"
 echo "   Installierte Modelle waehlst du oben in der Oberflaeche per Dropdown."
 echo "   Standardmodell des Agenten: agent/config.py -> MODEL"
 echo "   Stoppen:  docker compose down"
+echo "   Protokoll dieses Laufs: $LOG"
 echo "  =============================================="
 echo ""
