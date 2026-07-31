@@ -1,0 +1,48 @@
+# Phase 1 – Eigene lokale KI
+# Hardware-Profil: RTX 4080 Super (16 GB VRAM) · 32 GB DDR5
+#
+# Startet zwei Dienste:
+#   - ollama      : führt das Modell auf der GPU aus, stellt eine API bereit
+#   - open-webui  : Chat-Oberfläche im Browser (wie ChatGPT), self-hosted
+#
+# Start:   docker compose up -d
+# Öffnen:  http://localhost:3000
+# Stoppen: docker compose down
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"            # Ollama-API (lokal)
+    volumes:
+      - ollama:/root/.ollama     # Modelle bleiben nach Neustart erhalten
+    environment:
+      - OLLAMA_KEEP_ALIVE=30m    # Modell 30 min im VRAM halten -> schnelle Folgeantworten
+      - OLLAMA_FLASH_ATTENTION=1 # schneller + weniger VRAM auf RTX-40-Karten
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all         # GPU an den Container durchreichen
+              capabilities: [gpu]
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"              # Browser-Oberflaeche: http://localhost:3000
+    volumes:
+      - open-webui:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_AUTH=true          # eigenes Login (bleibt lokal auf deiner Maschine)
+    depends_on:
+      - ollama
+
+volumes:
+  ollama:
+  open-webui:
