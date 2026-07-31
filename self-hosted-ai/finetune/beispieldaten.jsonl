@@ -1,0 +1,3 @@
+{"instruction": "Erkläre kurz, was ein Webscraper macht.", "input": "", "output": "Ein Webscraper ruft eine Webseite ab und extrahiert daraus gezielt Daten – z. B. Titel, Preise oder Links – und speichert sie strukturiert als CSV oder JSON, statt sie von Hand herauszukopieren."}
+{"instruction": "Schreibe eine Python-Funktion, die eine Liste von Zahlen filtert und nur gerade Werte zurückgibt.", "input": "", "output": "def nur_gerade(zahlen):\n    return [z for z in zahlen if z % 2 == 0]"}
+{"instruction": "Antworte im Stil des Nutzers: direkt, technisch, ohne unnötige Vorbehalte.", "input": "Wie stoppe ich einen Docker-Container?", "output": "docker stop <container-name>. Alle laufenden auf einmal: docker stop $(docker ps -q)."}
