@@ -36,6 +36,12 @@ Stoppen: `docker compose down` · Wieder starten: `./install.sh` oder `docker co
 - Im Installer mehrere Modelle auswählen → alle werden geladen.
 - **In der Oberfläche** wählst du oben per **Dropdown** jederzeit zwischen allen
   installierten Modellen (pro Chat frei umschaltbar).
+- **Mehrere Modelle gleichzeitig in EINEM Chat:** ja — im Modell-Dropdown einfach
+  **mehrere** anhaken (z. B. Dolphin + Qwen-Coder). Dann antwortet **jedes Modell**
+  auf dieselbe Frage (nebeneinander zum Vergleich), und du kannst die Antworten
+  per „Merge/Zusammenführen" zu einer kombinieren. Hinweis: Sie laufen
+  nacheinander durch dieselbe GPU (nicht parallel) — bei großen Modellen dauert es
+  also entsprechend länger.
 - Später ein Modell nachrüsten:
   ```bash
   docker exec -it ollama ollama pull <name>
@@ -61,14 +67,18 @@ docker compose -f docker-compose.yml -f docker-compose.multimodal.yml up -d
 | Modalität | Womit | Status auf RTX 4080 Super (16 GB) |
 | --- | --- | --- |
 | **Bild** | ComfyUI + SDXL / FLUX | SDXL komfortabel · FLUX nur quantisiert (fp8/GGUF) |
+| **Video** | ComfyUI + Wan 2.2 / HunyuanVideo | Wan 2.2 (klein) gut · Hunyuan quantisiert, kurze Clips |
 | **Sprachausgabe (TTS)** | in der Oberfläche eingebaut | Admin → Audio (leicht) |
 | **Speech-to-Text** | Whisper, eingebaut | Admin → Audio (leicht) |
-| **Video** | Wan 2.2 / HunyuanVideo | sehr speicherhungrig → nur kurze/kleine Clips, langsam |
 
-**Ehrliche Hardware-Realität:** Ein großes LLM (24B/32B) **und** Bild/Video
-passen **nicht gleichzeitig** in 16 GB. In der Praxis läuft eins nach dem anderen
-(Ollama gibt das Modell frei, dann rechnet ComfyUI). Für Video ist die Karte das
-Nadelöhr — machbar, aber begrenzt.
+Bild **und** Video laufen beide über **ComfyUI** (per Workflow) — ein Dienst.
+
+**Hardware-Realität (bei Einzelnutzung entspannt):** Da du immer nur *eine*
+Aufgabe zur Zeit machst (coden **oder** Bild **oder** Video), hat jede die volle
+Karte für sich — der VRAM wird nicht geteilt. Tipp: vorher das LLM freigeben
+(`docker exec ollama ollama stop <modell>`), dann steht der ganze Speicher für
+Bild/Video bereit. Für Video bleibt die Karte der Engpass: kurze Clips, moderate
+Auflösung, Geduld — aber es geht.
 
 Bild-Anbindung: NERO QUANTUM → Admin → Einstellungen → Bilder → Engine „ComfyUI",
 URL `http://comfyui:8188`.

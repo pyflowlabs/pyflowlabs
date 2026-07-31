@@ -1,20 +1,23 @@
 # NERO QUANTUM – Multimodal-Erweiterung (optional)
 # =====================================================================
-# Startet zusaetzlich zum Haupt-Stack einen Bildgenerator (ComfyUI).
-# Sprache (TTS) und Speech-to-Text (Whisper) sind bereits in der
-# NERO-QUANTUM-Oberflaeche eingebaut -> Admin-Einstellungen -> Audio.
+# Startet zusaetzlich zum Haupt-Stack ComfyUI – das erledigt BILD *und*
+# VIDEO ueber Workflows. Sprache (TTS) und Speech-to-Text (Whisper) sind
+# bereits in der NERO-QUANTUM-Oberflaeche eingebaut -> Admin -> Audio.
 #
 # Starten (zusammen mit dem Haupt-Stack):
 #   docker compose -f docker-compose.yml -f docker-compose.multimodal.yml up -d
 #
 # HINWEIS Hardware (RTX 4080 Super, 16 GB VRAM):
-#   Ein grosses LLM (z. B. 24B/32B) UND Bildgenerierung passen NICHT
-#   gleichzeitig in 16 GB. In der Praxis laeuft eins nach dem anderen
-#   (Ollama gibt das Modell nach OLLAMA_KEEP_ALIVE frei, dann rechnet ComfyUI).
-#   - SDXL: laeuft komfortabel.
-#   - FLUX: nur als quantisierte Variante (fp8/GGUF), sonst zu gross.
-#   - Video (Wan 2.2 / HunyuanVideo): sehr speicherhungrig -> auf 16 GB nur
-#     kurze/kleine Clips, langsam. Als eigener Schritt spaeter, nicht hier.
+#   Du nutzt immer NUR EINE Aufgabe zur Zeit (coden ODER Bild ODER Video),
+#   also hat jede Aufgabe die volle Karte fuer sich – der VRAM wird nicht
+#   geteilt. Tipp: LLM vorher freigeben mit
+#     docker exec ollama ollama stop <modell>
+#   dann steht der ganze Speicher fuer Bild/Video bereit.
+#
+#   - BILD  SDXL: komfortabel · FLUX: nur quantisiert (fp8/GGUF).
+#   - VIDEO Wan 2.2: kleinere Varianten (z. B. 1.3B/5B) laufen auf 16 GB gut;
+#           HunyuanVideo (13B): nur quantisiert, kurze Clips, langsam.
+#           Realistische Erwartung: kurze Clips, moderate Aufloesung, Geduld.
 # =====================================================================
 
 services:
@@ -26,8 +29,9 @@ services:
     ports:
       - "8188:8188"              # ComfyUI-Oberflaeche / API
     volumes:
-      - ./comfyui/models:/opt/ComfyUI/models   # hier liegen SDXL/FLUX-Checkpoints
-      - ./comfyui/output:/opt/ComfyUI/output   # erzeugte Bilder
+      - ./comfyui/models:/opt/ComfyUI/models   # SDXL/FLUX + Video-Checkpoints (Wan/Hunyuan)
+      - ./comfyui/output:/opt/ComfyUI/output   # erzeugte Bilder UND Videos
+      - ./comfyui/workflows:/opt/ComfyUI/user/default/workflows  # eigene Workflows (Bild/Video)
     environment:
       - CLI_ARGS=--listen
     deploy:
