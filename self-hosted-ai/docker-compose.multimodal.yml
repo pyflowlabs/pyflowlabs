@@ -1,0 +1,44 @@
+# NERO QUANTUM – Multimodal-Erweiterung (optional)
+# =====================================================================
+# Startet zusaetzlich zum Haupt-Stack einen Bildgenerator (ComfyUI).
+# Sprache (TTS) und Speech-to-Text (Whisper) sind bereits in der
+# NERO-QUANTUM-Oberflaeche eingebaut -> Admin-Einstellungen -> Audio.
+#
+# Starten (zusammen mit dem Haupt-Stack):
+#   docker compose -f docker-compose.yml -f docker-compose.multimodal.yml up -d
+#
+# HINWEIS Hardware (RTX 4080 Super, 16 GB VRAM):
+#   Ein grosses LLM (z. B. 24B/32B) UND Bildgenerierung passen NICHT
+#   gleichzeitig in 16 GB. In der Praxis laeuft eins nach dem anderen
+#   (Ollama gibt das Modell nach OLLAMA_KEEP_ALIVE frei, dann rechnet ComfyUI).
+#   - SDXL: laeuft komfortabel.
+#   - FLUX: nur als quantisierte Variante (fp8/GGUF), sonst zu gross.
+#   - Video (Wan 2.2 / HunyuanVideo): sehr speicherhungrig -> auf 16 GB nur
+#     kurze/kleine Clips, langsam. Als eigener Schritt spaeter, nicht hier.
+# =====================================================================
+
+services:
+  comfyui:
+    # Community-Image (ai-dock). Bei Bedarf Tag/Variante anpassen.
+    image: ghcr.io/ai-dock/comfyui:latest-cuda
+    container_name: comfyui
+    restart: unless-stopped
+    ports:
+      - "8188:8188"              # ComfyUI-Oberflaeche / API
+    volumes:
+      - ./comfyui/models:/opt/ComfyUI/models   # hier liegen SDXL/FLUX-Checkpoints
+      - ./comfyui/output:/opt/ComfyUI/output   # erzeugte Bilder
+    environment:
+      - CLI_ARGS=--listen
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+# Anbindung an die Oberflaeche:
+#   NERO QUANTUM -> Admin -> Einstellungen -> Bilder:
+#     Engine: ComfyUI,  URL: http://comfyui:8188
+#   Danach kannst du direkt im Chat Bilder erzeugen lassen.

@@ -19,7 +19,8 @@ Voraussetzung: **Docker** installiert (Windows: Docker Desktop) und aktueller
 chmod +x install.sh && ./install.sh
 ```
 
-Das Skript startet alle Dienste und lädt das Modell. Danach:
+Der Installer zeigt ein **Menü**: wähle **ein oder mehrere** Modelle (Zahlen mit
+Leerzeichen, z. B. `1 3`) oder `C` für ein eigenes Modell. Danach:
 
 - **NERO QUANTUM (Chat):** http://localhost:3000
 - **Websuche:** http://localhost:8888
@@ -27,6 +28,55 @@ Das Skript startet alle Dienste und lädt das Modell. Danach:
 Beim ersten Öffnen ein lokales Konto anlegen (bleibt auf deiner Maschine).
 
 Stoppen: `docker compose down` · Wieder starten: `./install.sh` oder `docker compose up -d`
+
+---
+
+## Mehrere Modelle & Umschalten
+
+- Im Installer mehrere Modelle auswählen → alle werden geladen.
+- **In der Oberfläche** wählst du oben per **Dropdown** jederzeit zwischen allen
+  installierten Modellen (pro Chat frei umschaltbar).
+- Später ein Modell nachrüsten:
+  ```bash
+  docker exec -it ollama ollama pull <name>
+  ```
+- **Eigene / uncensored Modelle:** über den Menüpunkt `C` oder direkt per Pull.
+  Zwei Quellen:
+  - **Ollama-Bibliothek:** einfach der Name, z. B. `dolphin-mixtral`.
+  - **HuggingFace-GGUF:** `hf.co/USER/REPO:QUANT` — so ziehst du beliebige
+    Community-Fine-tunes (z. B. Dolphin-Varianten, Sao10K-, TheDrummer-,
+    BeaverAI-Modelle). Deine Maschine, deine Wahl.
+- Welches Modell der **Agent** nutzt: `agent/config.py` → `MODEL`.
+
+---
+
+## Multimodal (optional): Bild & Sprache
+
+Zusätzlicher Stack für Bildgenerierung; Sprachein-/ausgabe ist bereits eingebaut.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.multimodal.yml up -d
+```
+
+| Modalität | Womit | Status auf RTX 4080 Super (16 GB) |
+| --- | --- | --- |
+| **Bild** | ComfyUI + SDXL / FLUX | SDXL komfortabel · FLUX nur quantisiert (fp8/GGUF) |
+| **Sprachausgabe (TTS)** | in der Oberfläche eingebaut | Admin → Audio (leicht) |
+| **Speech-to-Text** | Whisper, eingebaut | Admin → Audio (leicht) |
+| **Video** | Wan 2.2 / HunyuanVideo | sehr speicherhungrig → nur kurze/kleine Clips, langsam |
+
+**Ehrliche Hardware-Realität:** Ein großes LLM (24B/32B) **und** Bild/Video
+passen **nicht gleichzeitig** in 16 GB. In der Praxis läuft eins nach dem anderen
+(Ollama gibt das Modell frei, dann rechnet ComfyUI). Für Video ist die Karte das
+Nadelöhr — machbar, aber begrenzt.
+
+Bild-Anbindung: NERO QUANTUM → Admin → Einstellungen → Bilder → Engine „ComfyUI",
+URL `http://comfyui:8188`.
+
+### Grenze bei Bild/Video
+Allgemeine, legale Kreativnutzung: deine Sache. **Nicht** dabei: sexuelle Inhalte
+von **echten Personen** oder **Minderjährigen** (Deepfakes/NCII/CSAM) — das ist
+hart illegal und wird hier nicht eingerichtet.
 
 ---
 
