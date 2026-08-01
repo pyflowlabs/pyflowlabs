@@ -1,0 +1,6 @@
+# Sprachsteuerung (Wake-Word + STT + TTS). Braucht ein Mikrofon.
+openwakeword      # Wake-Word "Hey Nero"
+sounddevice       # Audioaufnahme
+faster-whisper    # Speech-to-Text lokal
+# TTS ist bereits in der NERO-QUANTUM-Oberfläche eingebaut (Admin -> Audio).
+# Alternativ lokal: TTS (Coqui) oder Kokoro – je nach Wunsch.

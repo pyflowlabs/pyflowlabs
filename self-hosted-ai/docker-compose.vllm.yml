@@ -1,0 +1,44 @@
+# NERO QUANTUM – GPU-Optimierung (#7): vLLM als schnellere Inferenz-Engine (optional)
+# =====================================================================
+# vLLM ist oft deutlich schneller als Ollama (PagedAttention, Continuous
+# Batching) und stellt eine OpenAI-kompatible API bereit.
+#
+# Starten (statt/zusätzlich zu Ollama):
+#   NERO_VLLM_MODEL=Qwen/Qwen2.5-Coder-7B-Instruct-AWQ \
+#     docker compose -f docker-compose.yml -f docker-compose.vllm.yml up -d vllm
+#
+# In NERO QUANTUM anbinden: Admin -> Einstellungen -> Verbindungen ->
+#   OpenAI-API:  http://vllm:8000/v1   (Key beliebig)
+#
+# HINWEIS (RTX 4080 Super, 16 GB):
+#   - Auf 16 GB laufen realistisch 7B/14B in quantisiert (AWQ/GPTQ).
+#   - 32B ist mit vLLM auf 16 GB in der Regel zu groß -> dafür weiter Ollama.
+#   - Flash-Attention nutzt vLLM automatisch; Quantisierung über das Modell (AWQ).
+# =====================================================================
+
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - NERO_VLLM_MODEL=${NERO_VLLM_MODEL:-Qwen/Qwen2.5-Coder-7B-Instruct-AWQ}
+    command: >
+      --model ${NERO_VLLM_MODEL:-Qwen/Qwen2.5-Coder-7B-Instruct-AWQ}
+      --quantization awq
+      --gpu-memory-utilization 0.92
+      --max-model-len 8192
+    volumes:
+      - vllm-cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  vllm-cache:

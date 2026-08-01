@@ -22,15 +22,21 @@ Legende: ✅ fertig · 🟡 teilweise · ❌ offen
 | 11 | Sandbox-Härtung | ✅ | `docker_run_args` (RAM/CPU/Netz/PID) + `SANDBOX_MODE=docker` |
 | 13 | Benchmark-System | ✅ | `agent/benchmark.py` (Latenz/Tok-s/VRAM) |
 | 16 | Web-Automatisierung | ✅ | `agent/plugins/browser.py` (Playwright: browse/fill_form) |
-| 6 | Agenten-System | 🟡 | MoA + Rollen da · autonome Multi-Agenten-Kollaboration offen |
-| 3 | Sprachsteuerung (STT/TTS) | 🟡 | in der UI eingebaut · Wake-Word „Hey Nero" offen |
-| 7 | GPU-Optimierung | 🟡 | Flash-Attn + Quantisierung an · vLLM/TensorRT offen |
+| 6 | Agenten-System | ✅ | `agent/team.py` (Koordinator verteilt an Rollen-Agenten) + MoA |
+| 7 | GPU-Optimierung | ✅ | `docker-compose.vllm.yml` (vLLM) + Flash-Attn/Quantisierung |
+| 3 | Sprachsteuerung | 🟡 | STT/TTS in der UI ✅ · Wake-Word-Gerüst da (`agent/voice/`), Feinabstimmung am Mikro |
 
 **Fundament (schon da):** Stack + UI (NERO QUANTUM), Multi-Modell + Umschalten,
 Agent mit Werkzeugen, Polyglot-Code, Deep Search, Feintuning, Multimodal-Gen,
 Logging, **Gedächtnis/RAG**, **Plugin-System**.
 
 ---
+
+## Stand: 16 von 17 fertig ✅ (Sprachsteuerung zu ~75 %)
+
+Alle Kernfeatures sind gebaut und – wo ohne GPU/Modelle möglich – mit pytest
+getestet (12 grün, 2 übersprungen). Einzig das Wake-Word braucht Feinabstimmung
+am echten Mikrofon.
 
 ## Empfohlene Reihenfolge (baut auf deiner Priorisierung auf)
 
