@@ -17,6 +17,13 @@ SEARXNG_URL = "http://localhost:8888"
 MOA_PROPOSERS = ["qwen2.5-coder:32b", "dolphin-mixtral:latest"]
 MOA_AGGREGATOR = "qwen2.5-coder:32b"
 
+# --- Deep Search ----------------------------------------------------------
+# Tiefe Recherche: mehrere Suchanfragen -> viele Quellen lesen -> iterieren
+# -> mit Quellen zusammenfassen.
+DEEP_QUERIES = 4   # Suchanfragen je Runde
+DEEP_PAGES = 5     # Seiten je Runde tatsächlich lesen/scrapen
+DEEP_ROUNDS = 2    # Recherche-Runden (Runde 2 schließt erkannte Lücken)
+
 # --- Dein System-Prompt / deine Regeln ------------------------------------
 # Das ist die "Persönlichkeit" und das Regelwerk deiner KI. Neutral und direkt,
 # ohne fremde Filter — nur deine eigenen Vorgaben. Ändere alles nach Bedarf.

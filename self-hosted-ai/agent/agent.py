@@ -14,10 +14,28 @@ import json
 import ollama
 
 import config
+import deepsearch
 import logsetup
 import tools
 
 log, LOG_FILE = logsetup.setup("nero.agent")
+
+# Deep Search als Werkzeug registrieren (tiefe, mehrstufige Recherche).
+tools.DISPATCH["deep_search"] = lambda question: deepsearch.deep_search(question)
+tools.TOOLS_SPEC.append({
+    "type": "function",
+    "function": {
+        "name": "deep_search",
+        "description": "Tiefe, mehrstufige Web-Recherche: bildet mehrere Suchanfragen, "
+                       "liest viele Quellen, iteriert und fasst mit Quellen zusammen. "
+                       "Für gründliche Recherche statt einer einzelnen Suche.",
+        "parameters": {
+            "type": "object",
+            "properties": {"question": {"type": "string", "description": "Recherchefrage"}},
+            "required": ["question"],
+        },
+    },
+})
 
 # Höchstzahl Werkzeug-Runden pro Aufgabe (Schutz vor Endlosschleifen).
 MAX_STEPS = 12

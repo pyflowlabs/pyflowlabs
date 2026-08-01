@@ -22,9 +22,9 @@ import config
 log = logging.getLogger("nero.tools")
 
 
-# --- Websuche (Deep Search über SearxNG) ----------------------------------
-def web_search(query: str, num_results: int = 8) -> str:
-    """Sucht neutral im Web (SearxNG) und gibt Titel, URL und Kurztext zurück."""
+# --- Websuche (über SearxNG) ----------------------------------------------
+def search_web_raw(query: str, num_results: int = 8) -> list:
+    """Strukturierte Suche: Liste von {title, url, content}. Basis für Deep Search."""
     try:
         resp = requests.get(
             f"{config.SEARXNG_URL}/search",
@@ -32,13 +32,17 @@ def web_search(query: str, num_results: int = 8) -> str:
             timeout=20,
         )
         resp.raise_for_status()
-        results = resp.json().get("results", [])[:num_results]
+        return resp.json().get("results", [])[:num_results]
     except Exception as exc:  # noqa: BLE001
-        log.warning("web_search fehlgeschlagen (query=%r): %s", query, exc)
-        return f"Suche fehlgeschlagen: {exc}"
+        log.warning("search_web_raw fehlgeschlagen (query=%r): %s", query, exc)
+        return []
 
+
+def web_search(query: str, num_results: int = 8) -> str:
+    """Sucht neutral im Web (SearxNG) und gibt Titel, URL und Kurztext zurück."""
+    results = search_web_raw(query, num_results)
     if not results:
-        return "Keine Treffer gefunden."
+        return "Keine Treffer gefunden (oder Suche fehlgeschlagen – siehe Log)."
 
     lines = []
     for i, r in enumerate(results, 1):

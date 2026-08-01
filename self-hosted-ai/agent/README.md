@@ -8,10 +8,14 @@ Damit *tut* die KI Dinge, statt nur zu antworten.
 
 | Werkzeug | Was es kann |
 | --- | --- |
-| `web_search` | Neutrale Deep-Web-Suche über SearxNG, liefert Titel + URLs + Kurztext |
+| `web_search` | Einzelne Websuche über SearxNG, liefert Titel + URLs + Kurztext |
+| `deep_search` | **Tiefe Recherche:** mehrere Suchanfragen, liest viele Quellen, iteriert, fasst mit Quellen zusammen |
 | `fetch_page` | Lädt eine URL, gibt sauberen Text **und alle Links** zurück (Scraping) |
 | `read_file` / `write_file` | Dateien im `workspace/`-Ordner lesen/schreiben |
 | `run_python` | Python-Code ausführen (z. B. eigene Scraper), mit Zeitlimit |
+
+Deep Search auch einzeln nutzbar: `python deepsearch.py` (Tiefe in `config.py` →
+`DEEP_QUERIES` / `DEEP_PAGES` / `DEEP_ROUNDS`).
 
 Neue Fähigkeiten hinzufügen = eine Funktion in `tools.py` schreiben + Schema in
 `TOOLS_SPEC` eintragen. Sonst nichts.

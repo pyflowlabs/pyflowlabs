@@ -52,6 +52,13 @@ Beides parallel möglich – du wählst pro Situation Web oder App.
   cd agent && pip install -r requirements.txt && python moa.py
   ```
   Proposer/Aggregator festlegen in `agent/config.py`.
+- **Deep Search (tiefe Recherche mit Quellen):**
+  ```bash
+  cd agent && python deepsearch.py
+  ```
+  Bildet mehrere Suchanfragen, liest viele Quellen, iteriert, fasst mit Links
+  zusammen. Der Agent (`agent.py`) kann `deep_search` auch selbst aufrufen.
+  Tiefe: `config.py` → `DEEP_QUERIES` / `DEEP_PAGES` / `DEEP_ROUNDS`.
 
 ---
 
