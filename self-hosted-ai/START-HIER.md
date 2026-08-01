@@ -104,10 +104,28 @@ docker compose -f docker-compose.yml -f docker-compose.multimodal.yml up -d
 
 ---
 
-## 6. Lernen (Feintuning)
+## 6. Langzeitgedächtnis & eigene Dokumente (RAG)
+```bash
+docker exec -it ollama ollama pull nomic-embed-text     # Embedding-Modell
+cd agent && pip install -r requirements-memory.txt       # chromadb + pypdf
+```
+Dann kann der Agent (`agent.py`):
+- `remember` / `recall` – merkt sich Vorlieben, Projektstände, vermiedene Fehler
+- `kb_ingest "D:\\Dokumente"` – liest ganze Ordner (txt/md/pdf) ein
+- `kb_search "Wo liegt die Amazon-Rechnung?"` – antwortet auf Basis deiner Dateien
+
+## 7. Plugins (neue Fähigkeiten)
+Neue `.py`-Datei in `agent/plugins/` mit `PLUGIN_TOOLS` ablegen → beim Start
+automatisch erkannt. Vorlage: `agent/plugins/archive_tools.py` (unzip, list_dir).
+
+## 8. Lernen (Feintuning)
 - Beispiele sammeln: `finetune/add_example.py`
 - Trainieren: `finetune/START-TRAINING.md`
 - Pipeline-Agenten: writer → reviewer → learner → deployer (`.claude/agents/`)
+
+## Was noch aussteht → `ROADMAP-V1.md`
+Vision, Selbstbewertung, Scheduler, Tests, Monitoring, Benchmark, Wake-Word …
+mit empfohlener Reihenfolge.
 
 ---
 

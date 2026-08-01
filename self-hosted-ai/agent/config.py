@@ -24,6 +24,14 @@ DEEP_QUERIES = 4   # Suchanfragen je Runde
 DEEP_PAGES = 5     # Seiten je Runde tatsächlich lesen/scrapen
 DEEP_ROUNDS = 2    # Recherche-Runden (Runde 2 schließt erkannte Lücken)
 
+# --- Langzeitgedächtnis / RAG ---------------------------------------------
+# Embedding-Modell (lokal über Ollama). Vorher laden:
+#   docker exec -it ollama ollama pull nomic-embed-text
+EMBED_MODEL = "nomic-embed-text"
+MEMORY_DIR = "./memory_db"   # persistente Vektor-Datenbank (ChromaDB)
+RAG_CHUNK = 1200             # Zeichen pro Dokument-Abschnitt
+RAG_TOPK = 5                 # wie viele Treffer je Suche
+
 # --- Dein System-Prompt / deine Regeln ------------------------------------
 # Das ist die "Persönlichkeit" und das Regelwerk deiner KI. Neutral und direkt,
 # ohne fremde Filter — nur deine eigenen Vorgaben. Ändere alles nach Bedarf.

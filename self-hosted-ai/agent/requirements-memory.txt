@@ -1,0 +1,5 @@
+# Langzeitgedächtnis / RAG
+chromadb        # lokale Vektor-Datenbank (persistent)
+pypdf           # PDFs für die Wissensbasis einlesen
+# Embeddings laufen über Ollama (nomic-embed-text) – kein extra pip nötig:
+#   docker exec -it ollama ollama pull nomic-embed-text

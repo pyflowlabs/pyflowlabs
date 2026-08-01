@@ -16,6 +16,8 @@ import ollama
 import config
 import deepsearch
 import logsetup
+import memory
+import plugins_loader
 import tools
 
 log, LOG_FILE = logsetup.setup("nero.agent")
@@ -36,6 +38,14 @@ tools.TOOLS_SPEC.append({
         },
     },
 })
+
+# Langzeitgedächtnis + RAG (remember/recall/kb_ingest/kb_search).
+for _t in memory.TOOLS:
+    tools.DISPATCH[_t["name"]] = _t["func"]
+    tools.TOOLS_SPEC.append(_t["spec"])
+
+# Plugins aus plugins/ automatisch laden.
+_plugins = plugins_loader.load_plugins(tools.DISPATCH, tools.TOOLS_SPEC)
 
 # Höchstzahl Werkzeug-Runden pro Aufgabe (Schutz vor Endlosschleifen).
 MAX_STEPS = 12
@@ -96,6 +106,9 @@ def run(task: str, messages: list | None = None) -> list:
 def main() -> None:
     print("Lokaler Agent bereit. Aufgabe eingeben (oder 'exit').")
     print(f"Modell: {config.MODEL}")
+    print(f"Werkzeuge: {', '.join(sorted(tools.DISPATCH))}")
+    if _plugins:
+        print(f"Plugins: {', '.join(_plugins)}")
     print(f"Protokoll: {LOG_FILE}\n")
     history: list | None = None
     while True:
