@@ -11,8 +11,11 @@ Schema in TOOLS_SPEC einträgst — mehr nicht.
 
 import logging
 import os
+import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 import requests
 from bs4 import BeautifulSoup
@@ -147,6 +150,91 @@ def run_python(code: str) -> str:
     return "\n\n".join(parts) or "(keine Ausgabe)"
 
 
+# --- Polyglot: Code in mehreren Sprachen ausführen -------------------------
+def _write(folder: str, name: str, content: str) -> str:
+    path = os.path.join(folder, name)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(content)
+    return path
+
+
+def _exec(cmd: list, cwd: str, timeout: int, compile_step: bool = False):
+    """Führt einen Befehl aus. compile_step=True: gibt None bei Erfolg zurück,
+    sonst die Fehlermeldung (zum Abbrechen vor dem Ausführen)."""
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd)
+    except subprocess.TimeoutExpired:
+        return f"Abgebrochen: '{cmd[0]}' lief länger als {timeout}s."
+    except FileNotFoundError:
+        log.warning("Toolchain fehlt: %s", cmd[0])
+        return (f"Toolchain fehlt: '{cmd[0]}' nicht gefunden. "
+                f"Installieren (siehe sandbox/README.md) oder Sandbox-Container nutzen.")
+    except Exception as exc:  # noqa: BLE001
+        log.exception("Ausführung fehlgeschlagen: %s", cmd)
+        return f"Ausführung fehlgeschlagen: {exc}"
+
+    if compile_step:
+        if r.returncode != 0:
+            return f"Kompilierfehler:\n{(r.stderr or r.stdout).strip()}"
+        return None
+    out, err = (r.stdout or "").strip(), (r.stderr or "").strip()
+    parts = []
+    if out:
+        parts.append(f"AUSGABE:\n{out}")
+    if err:
+        parts.append(f"FEHLER:\n{err}")
+    return "\n\n".join(parts) or "(keine Ausgabe)"
+
+
+def _java_class(code: str) -> str:
+    m = re.search(r"(?:public\s+)?class\s+([A-Za-z_]\w*)", code)
+    return m.group(1) if m else "Main"
+
+
+def run_code(language: str, code: str) -> str:
+    """Führt Code in einer Sprache aus: python, javascript, c, cpp, csharp, java, sql, html."""
+    lang = language.lower().strip().lstrip(".")
+    base = os.path.abspath(config.WORKSPACE_DIR)
+    os.makedirs(base, exist_ok=True)
+    tmp = tempfile.mkdtemp(dir=base)
+    t = config.CODE_TIMEOUT
+    try:
+        if lang in ("python", "py"):
+            return _exec([sys.executable, _write(tmp, "main.py", code)], tmp, t)
+        if lang in ("javascript", "js", "node"):
+            return _exec(["node", _write(tmp, "main.js", code)], tmp, t)
+        if lang == "c":
+            src, exe = _write(tmp, "main.c", code), os.path.join(tmp, "prog")
+            err = _exec(["gcc", src, "-o", exe], tmp, t, compile_step=True)
+            return err if err else _exec([exe], tmp, t)
+        if lang in ("cpp", "c++", "cxx"):
+            src, exe = _write(tmp, "main.cpp", code), os.path.join(tmp, "prog")
+            err = _exec(["g++", src, "-o", exe], tmp, t, compile_step=True)
+            return err if err else _exec([exe], tmp, t)
+        if lang == "java":
+            cls = _java_class(code)
+            src = _write(tmp, f"{cls}.java", code)
+            err = _exec(["javac", src], tmp, t, compile_step=True)
+            return err if err else _exec(["java", "-cp", tmp, cls], tmp, t)
+        if lang in ("csharp", "c#", "cs"):
+            proj = os.path.join(tmp, "app")
+            err = _exec(["dotnet", "new", "console", "-o", proj, "--force"], tmp, t * 3, compile_step=True)
+            if err:
+                return err
+            _write(proj, "Program.cs", code)
+            return _exec(["dotnet", "run", "--project", proj], tmp, t * 3)
+        if lang in ("sql", "sqlite"):
+            db = os.path.join(tmp, "db.sqlite")
+            return _exec(["sqlite3", db, code], tmp, t)
+        if lang == "html":
+            path = _write(tmp, "page.html", code)
+            return (f"HTML gespeichert: {path}\n"
+                    f"(HTML wird nicht ausgeführt, sondern im Browser gerendert.)")
+        return f"Sprache nicht unterstützt: {language}"
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 # --- Zuordnung Name -> Funktion -------------------------------------------
 DISPATCH = {
     "web_search": web_search,
@@ -154,6 +242,7 @@ DISPATCH = {
     "read_file": read_file,
     "write_file": write_file,
     "run_python": run_python,
+    "run_code": run_code,
 }
 
 
@@ -227,6 +316,23 @@ TOOLS_SPEC = [
                 "type": "object",
                 "properties": {"code": {"type": "string", "description": "Python-Code"}},
                 "required": ["code"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "run_code",
+            "description": "Führt Code in einer Sprache aus und gibt Ausgabe/Fehler zurück. "
+                           "Sprachen: python, javascript, c, cpp, csharp, java, sql, html. "
+                           "Kompiliert bei Bedarf. Toolchain muss vorhanden sein.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "language": {"type": "string", "description": "z. B. python, java, cpp, csharp, sql"},
+                    "code": {"type": "string", "description": "Quellcode"},
+                },
+                "required": ["language", "code"],
             },
         },
     },

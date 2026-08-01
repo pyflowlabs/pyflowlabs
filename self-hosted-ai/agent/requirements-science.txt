@@ -1,0 +1,9 @@
+# Mathe & Deep Learning fuer den Code-Runner (Weg A: lokal auf dem Host).
+# Lineare Algebra, Analysis, Wahrscheinlichkeit, ML/DL.
+numpy
+scipy
+sympy
+pandas
+scikit-learn
+# PyTorch (CPU). Fuer GPU die passende CUDA-Variante von pytorch.org waehlen.
+torch

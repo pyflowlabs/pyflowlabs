@@ -13,6 +13,10 @@ Damit *tut* die KI Dinge, statt nur zu antworten.
 | `fetch_page` | Lädt eine URL, gibt sauberen Text **und alle Links** zurück (Scraping) |
 | `read_file` / `write_file` | Dateien im `workspace/`-Ordner lesen/schreiben |
 | `run_python` | Python-Code ausführen (z. B. eigene Scraper), mit Zeitlimit |
+| `run_code` | Code ausführen/kompilieren: **python, javascript, c, cpp, csharp, java, sql, html** |
+
+Toolchains & Mathe/DL-Bibliotheken (NumPy/SciPy/SymPy/scikit-learn/PyTorch):
+siehe `../sandbox/README.md`.
 
 Deep Search auch einzeln nutzbar: `python deepsearch.py` (Tiefe in `config.py` →
 `DEEP_QUERIES` / `DEEP_PAGES` / `DEEP_ROUNDS`).
