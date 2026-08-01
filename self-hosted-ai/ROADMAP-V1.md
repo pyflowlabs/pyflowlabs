@@ -13,18 +13,18 @@ Legende: ✅ fertig · 🟡 teilweise · ❌ offen
 | 2 | Plugin-System (Auto-Erkennung) | ✅ | `agent/plugins_loader.py` + `agent/plugins/` |
 | 15 | Wissensbasis (PDFs/MD/Notizen) | ✅ | Teil von #1: `kb_ingest` / `kb_search` |
 | 5 | Lokales RAG über Ordner | ✅ | Teil von #1: `kb_ingest("D:\\...")` |
-| 6 | Agenten-System | 🟡 | MoA + writer/reviewer/… da · Rollen-Agenten offen |
+| 17 | Rollen-/Persönlichkeit | ✅ | `agent/roles.py` (developer/researcher/math/security/…) |
+| 3b | Selbstbewertung (#8) | ✅ | `agent/selfeval.py` + `/selfcheck` im Agenten |
+| 4 | Vision (OCR/Diagramme/Tabellen) | ✅ | `agent/vision.py` (Vision-Modell + Tesseract-OCR) |
+| 12 | Automatische Tests | ✅ | `agent/tests/` (pytest) – 5 grün, 1 skip |
+| 14 | Monitoring | ✅ | `agent/monitor.py` (CPU/GPU/VRAM/Temp/Strom) |
+| 6 | Agenten-System | 🟡 | MoA + Rollen da · autonome Multi-Agenten-Kollaboration offen |
 | 3 | Sprachsteuerung (STT/TTS) | 🟡 | in der UI eingebaut · Wake-Word „Hey Nero" offen |
 | 7 | GPU-Optimierung | 🟡 | Flash-Attn + Quantisierung an · vLLM/TensorRT offen |
 | 11 | Sandbox-Härtung | 🟡 | Zeit-/Pfad-Limit · RAM/CPU/Netz/Container offen |
 | 16 | Web-Automatisierung | 🟡 | Scraping da · echter Browser-Controller offen |
-| 17 | Rollen-/Persönlichkeit | 🟡 | ein System-Prompt · Multi-Rolle offen |
-| 4 | Vision (OCR/Diagramme/Tabellen) | ❌ | Vision-Modell + OCR fehlen |
-| 8 | Selbstbewertung | ❌ | Selbst-Kritik-Schleife fehlt |
 | 10 | Scheduler | ❌ | geplante Aufgaben fehlen |
-| 12 | Automatische Tests | ❌ | pytest/Regression fehlen |
 | 13 | Benchmark-System | ❌ | Modellvergleich fehlt |
-| 14 | Monitoring | ❌ | Live-Statistiken fehlen |
 
 **Fundament (schon da):** Stack + UI (NERO QUANTUM), Multi-Modell + Umschalten,
 Agent mit Werkzeugen, Polyglot-Code, Deep Search, Feintuning, Multimodal-Gen,

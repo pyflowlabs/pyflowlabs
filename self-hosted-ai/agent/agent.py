@@ -18,7 +18,10 @@ import deepsearch
 import logsetup
 import memory
 import plugins_loader
+import roles
+import selfeval
 import tools
+import vision
 
 log, LOG_FILE = logsetup.setup("nero.agent")
 
@@ -39,8 +42,8 @@ tools.TOOLS_SPEC.append({
     },
 })
 
-# Langzeitgedächtnis + RAG (remember/recall/kb_ingest/kb_search).
-for _t in memory.TOOLS:
+# Langzeitgedächtnis + RAG (remember/recall/kb_ingest/kb_search) und Vision.
+for _t in memory.TOOLS + vision.TOOLS:
     tools.DISPATCH[_t["name"]] = _t["func"]
     tools.TOOLS_SPEC.append(_t["spec"])
 
@@ -50,20 +53,29 @@ _plugins = plugins_loader.load_plugins(tools.DISPATCH, tools.TOOLS_SPEC)
 # Höchstzahl Werkzeug-Runden pro Aufgabe (Schutz vor Endlosschleifen).
 MAX_STEPS = 12
 
+# Aktive Rolle + Selbstbewertung (per /role bzw. /selfcheck umschaltbar).
+STATE = {"role": roles.DEFAULT_ROLE, "selfcheck": False}
+
+
+def _system_prompt() -> str:
+    r = roles.get(STATE["role"])
+    return r["prompt"] if r else config.SYSTEM_PROMPT
+
 
 def run(task: str, messages: list | None = None) -> list:
     """Bearbeitet eine Aufgabe und gibt den aktualisierten Nachrichtenverlauf zurück."""
     client = ollama.Client(host=config.OLLAMA_HOST)
+    spec = roles.filter_specs(STATE["role"], tools.TOOLS_SPEC)
 
     if messages is None:
-        messages = [{"role": "system", "content": config.SYSTEM_PROMPT}]
+        messages = [{"role": "system", "content": _system_prompt()}]
     messages.append({"role": "user", "content": task})
 
     for _ in range(MAX_STEPS):
         response = client.chat(
             model=config.MODEL,
             messages=messages,
-            tools=tools.TOOLS_SPEC,
+            tools=spec,
         )
         msg = response["message"]
         messages.append(msg)
@@ -71,7 +83,13 @@ def run(task: str, messages: list | None = None) -> list:
         tool_calls = msg.get("tool_calls")
         if not tool_calls:
             # Keine Werkzeug-Aufrufe mehr -> finale Antwort.
-            print(f"\n🤖 {msg.get('content', '').strip()}\n")
+            answer = msg.get("content", "").strip()
+            if STATE["selfcheck"] and answer:
+                verdict = selfeval.critique_and_improve(client, task, answer)
+                if verdict["improved"]:
+                    print("   🔁 Selbstbewertung: verbessert")
+                    answer = verdict["final"]
+            print(f"\n🤖 {answer}\n")
             return messages
 
         # Alle angeforderten Werkzeuge ausführen und Ergebnisse zurückgeben.
@@ -109,6 +127,7 @@ def main() -> None:
     print(f"Werkzeuge: {', '.join(sorted(tools.DISPATCH))}")
     if _plugins:
         print(f"Plugins: {', '.join(_plugins)}")
+    print(f"Rolle: {STATE['role']}  ·  Befehle: /roles, /role <name>, /selfcheck")
     print(f"Protokoll: {LOG_FILE}\n")
     history: list | None = None
     while True:
@@ -121,6 +140,26 @@ def main() -> None:
             break
         if not task:
             continue
+
+        # Befehle
+        if task == "/roles":
+            for n in roles.names():
+                print(f"   {n:12} – {roles.get(n)['desc']}")
+            continue
+        if task.startswith("/role "):
+            new = task.split(maxsplit=1)[1].strip()
+            if roles.get(new):
+                STATE["role"] = new
+                history = None  # neuer System-Prompt -> Verlauf zurücksetzen
+                print(f"   Rolle: {new}")
+            else:
+                print(f"   Unbekannte Rolle: {new} (siehe /roles)")
+            continue
+        if task == "/selfcheck":
+            STATE["selfcheck"] = not STATE["selfcheck"]
+            print(f"   Selbstbewertung: {'an' if STATE['selfcheck'] else 'aus'}")
+            continue
+
         history = run(task, history)
 
 
