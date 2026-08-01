@@ -18,13 +18,13 @@ Legende: ✅ fertig · 🟡 teilweise · ❌ offen
 | 4 | Vision (OCR/Diagramme/Tabellen) | ✅ | `agent/vision.py` (Vision-Modell + Tesseract-OCR) |
 | 12 | Automatische Tests | ✅ | `agent/tests/` (pytest) – 5 grün, 1 skip |
 | 14 | Monitoring | ✅ | `agent/monitor.py` (CPU/GPU/VRAM/Temp/Strom) |
+| 10 | Scheduler | ✅ | `agent/scheduler.py` (Intervall/täglich, JSON-Store) |
+| 11 | Sandbox-Härtung | ✅ | `docker_run_args` (RAM/CPU/Netz/PID) + `SANDBOX_MODE=docker` |
+| 13 | Benchmark-System | ✅ | `agent/benchmark.py` (Latenz/Tok-s/VRAM) |
+| 16 | Web-Automatisierung | ✅ | `agent/plugins/browser.py` (Playwright: browse/fill_form) |
 | 6 | Agenten-System | 🟡 | MoA + Rollen da · autonome Multi-Agenten-Kollaboration offen |
 | 3 | Sprachsteuerung (STT/TTS) | 🟡 | in der UI eingebaut · Wake-Word „Hey Nero" offen |
 | 7 | GPU-Optimierung | 🟡 | Flash-Attn + Quantisierung an · vLLM/TensorRT offen |
-| 11 | Sandbox-Härtung | 🟡 | Zeit-/Pfad-Limit · RAM/CPU/Netz/Container offen |
-| 16 | Web-Automatisierung | 🟡 | Scraping da · echter Browser-Controller offen |
-| 10 | Scheduler | ❌ | geplante Aufgaben fehlen |
-| 13 | Benchmark-System | ❌ | Modellvergleich fehlt |
 
 **Fundament (schon da):** Stack + UI (NERO QUANTUM), Multi-Modell + Umschalten,
 Agent mit Werkzeugen, Polyglot-Code, Deep Search, Feintuning, Multimodal-Gen,

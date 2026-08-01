@@ -191,8 +191,43 @@ def _java_class(code: str) -> str:
     return m.group(1) if m else "Main"
 
 
+def docker_run_args() -> list:
+    """Gehärtete `docker run`-Flags (RAM-/CPU-/Netz-/Prozess-Limits). Testbar."""
+    return [
+        "docker", "run", "--rm",
+        f"--memory={config.SANDBOX_MEM}",
+        f"--cpus={config.SANDBOX_CPUS}",
+        f"--network={config.SANDBOX_NET}",
+        f"--pids-limit={config.SANDBOX_PIDS}",
+    ]
+
+
+def _run_inner(host_cmds: list, docker_inner: str, tmp: str, timeout: int):
+    """Führt aus – entweder gehärtet im Container (SANDBOX_MODE=docker) oder auf dem Host.
+
+    host_cmds: Liste von (argv, compile_step)-Tupeln (nacheinander).
+    docker_inner: eine bash-Zeile, die im Container läuft.
+    """
+    if config.SANDBOX_MODE == "docker":
+        cmd = docker_run_args() + ["-v", f"{tmp}:/work", "-w", "/work",
+                                   config.SANDBOX_IMAGE, "bash", "-lc", docker_inner]
+        return _exec(cmd, tmp, timeout)
+    # Host-Modus: Schritte nacheinander (Kompilieren -> Ausführen)
+    for argv, compile_step in host_cmds:
+        res = _exec(argv, tmp, timeout, compile_step=compile_step)
+        if compile_step and res is not None:
+            return res  # Kompilierfehler
+        if not compile_step:
+            return res
+    return "(keine Ausgabe)"
+
+
 def run_code(language: str, code: str) -> str:
-    """Führt Code in einer Sprache aus: python, javascript, c, cpp, csharp, java, sql, html."""
+    """Führt Code aus: python, javascript, c, cpp, csharp, java, sql, html.
+
+    Bei config.SANDBOX_MODE == "docker" läuft alles isoliert im nero-sandbox-
+    Container mit RAM-/CPU-/Netz-Limits (siehe sandbox/README.md).
+    """
     lang = language.lower().strip().lstrip(".")
     base = os.path.abspath(config.WORKSPACE_DIR)
     os.makedirs(base, exist_ok=True)
@@ -200,22 +235,30 @@ def run_code(language: str, code: str) -> str:
     t = config.CODE_TIMEOUT
     try:
         if lang in ("python", "py"):
-            return _exec([sys.executable, _write(tmp, "main.py", code)], tmp, t)
+            _write(tmp, "main.py", code)
+            return _run_inner([([sys.executable, "main.py"], False)], "python3 main.py", tmp, t)
         if lang in ("javascript", "js", "node"):
-            return _exec(["node", _write(tmp, "main.js", code)], tmp, t)
+            _write(tmp, "main.js", code)
+            return _run_inner([(["node", "main.js"], False)], "node main.js", tmp, t)
         if lang == "c":
-            src, exe = _write(tmp, "main.c", code), os.path.join(tmp, "prog")
-            err = _exec(["gcc", src, "-o", exe], tmp, t, compile_step=True)
-            return err if err else _exec([exe], tmp, t)
+            _write(tmp, "main.c", code)
+            return _run_inner([(["gcc", "main.c", "-o", "prog"], True), (["./prog"], False)],
+                              "gcc main.c -o prog && ./prog", tmp, t)
         if lang in ("cpp", "c++", "cxx"):
-            src, exe = _write(tmp, "main.cpp", code), os.path.join(tmp, "prog")
-            err = _exec(["g++", src, "-o", exe], tmp, t, compile_step=True)
-            return err if err else _exec([exe], tmp, t)
+            _write(tmp, "main.cpp", code)
+            return _run_inner([(["g++", "main.cpp", "-o", "prog"], True), (["./prog"], False)],
+                              "g++ main.cpp -o prog && ./prog", tmp, t)
         if lang == "java":
             cls = _java_class(code)
-            src = _write(tmp, f"{cls}.java", code)
-            err = _exec(["javac", src], tmp, t, compile_step=True)
-            return err if err else _exec(["java", "-cp", tmp, cls], tmp, t)
+            _write(tmp, f"{cls}.java", code)
+            return _run_inner([(["javac", f"{cls}.java"], True), (["java", "-cp", ".", cls], False)],
+                              f"javac {cls}.java && java -cp . {cls}", tmp, t)
+        if lang in ("sql", "sqlite"):
+            _write(tmp, "main.sql", code)
+            return _run_inner([(["sqlite3", "db.sqlite"], False)],  # host: über stdin unten
+                              "sqlite3 db.sqlite < main.sql", tmp, t) \
+                if config.SANDBOX_MODE == "docker" else _exec(
+                    ["sqlite3", os.path.join(tmp, "db.sqlite"), code], tmp, t)
         if lang in ("csharp", "c#", "cs"):
             proj = os.path.join(tmp, "app")
             err = _exec(["dotnet", "new", "console", "-o", proj, "--force"], tmp, t * 3, compile_step=True)
@@ -223,9 +266,6 @@ def run_code(language: str, code: str) -> str:
                 return err
             _write(proj, "Program.cs", code)
             return _exec(["dotnet", "run", "--project", proj], tmp, t * 3)
-        if lang in ("sql", "sqlite"):
-            db = os.path.join(tmp, "db.sqlite")
-            return _exec(["sqlite3", db, code], tmp, t)
         if lang == "html":
             path = _write(tmp, "page.html", code)
             return (f"HTML gespeichert: {path}\n"

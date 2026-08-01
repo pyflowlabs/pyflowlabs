@@ -37,6 +37,22 @@ RAG_TOPK = 5                 # wie viele Treffer je Suche
 # Vorher laden:  docker exec -it ollama ollama pull llama3.2-vision
 VISION_MODEL = "llama3.2-vision"
 
+# --- Scheduler ------------------------------------------------------------
+SCHEDULE_FILE = "./schedule.json"   # gespeicherte, wiederkehrende Aufgaben
+
+# --- Sandbox-Härtung ------------------------------------------------------
+# "host": run_code läuft lokal (schnell). "docker": läuft isoliert im
+# nero-sandbox-Container mit RAM-/CPU-/Netz-Limits (sicherer).
+SANDBOX_MODE = "host"
+SANDBOX_IMAGE = "nero-sandbox"
+SANDBOX_MEM = "2g"          # RAM-Limit
+SANDBOX_CPUS = "2"          # CPU-Limit
+SANDBOX_NET = "none"        # "none" (kein Netz) oder "bridge"
+SANDBOX_PIDS = 256          # max. Prozesse
+
+# --- Benchmark ------------------------------------------------------------
+BENCH_PROMPT = "Erkläre in 3 Sätzen, was Quantisierung bei LLMs bewirkt."
+
 # --- Dein System-Prompt / deine Regeln ------------------------------------
 # Das ist die "Persönlichkeit" und das Regelwerk deiner KI. Neutral und direkt,
 # ohne fremde Filter — nur deine eigenen Vorgaben. Ändere alles nach Bedarf.
