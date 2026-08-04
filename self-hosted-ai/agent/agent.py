@@ -114,49 +114,30 @@ def _extract_tool_call(content: str):
     return None
 
 
-def run(task: str, messages: list | None = None) -> list:
-    """Bearbeitet eine Aufgabe und gibt den aktualisierten Nachrichtenverlauf zurück."""
-    client = ollama.Client(host=config.OLLAMA_HOST)
-    spec = roles.filter_specs(STATE["role"], tools.TOOLS_SPEC)
-
-    if messages is None:
-        messages = [{"role": "system", "content": _system_prompt() + TOOL_PROTOCOL_HINT}]
-    messages.append({"role": "user", "content": task})
-
+def _run_loop(client, messages: list, spec: list, on_step=None) -> str:
+    """Kern-Loop: chattet mit dem Modell, führt Werkzeuge aus, gibt die finale
+    Antwort als Text zurück. on_step(name, args) meldet jeden Werkzeug-Aufruf.
+    """
     last_tool_result = None
     for _ in range(MAX_STEPS):
-        response = client.chat(
-            model=config.MODEL,
-            messages=messages,
-            tools=spec,
-        )
+        response = client.chat(model=config.MODEL, messages=messages, tools=spec)
         msg = response["message"]
         messages.append(msg)
 
         tool_calls = msg.get("tool_calls")
         if not tool_calls:
-            # Fallback: manche Modelle geben den Werkzeug-Aufruf als Text-JSON
-            # aus, statt ihn strukturiert auszulösen. Diesen erkennen und ausführen.
+            # Fallback: Werkzeug-Aufruf als Text-JSON erkennen.
             fb = _extract_tool_call(msg.get("content", ""))
             if fb:
                 tool_calls = [fb]
 
         if not tool_calls:
-            # Keine Werkzeug-Aufrufe mehr -> finale Antwort.
-            answer = msg.get("content", "").strip()
-            # Kleine Modelle geben nach einem Werkzeug manchmal leeren/kaputten
-            # JSON statt einer Antwort aus. Dann das Werkzeug-Ergebnis direkt zeigen.
+            answer = (msg.get("content") or "").strip()
+            # Leere/kaputte JSON-"Antwort" -> stattdessen Werkzeug-Ergebnis zeigen.
             if (not answer or _is_degenerate(answer)) and last_tool_result:
                 answer = last_tool_result
-            if STATE["selfcheck"] and answer:
-                verdict = selfeval.critique_and_improve(client, task, answer)
-                if verdict["improved"]:
-                    print("   🔁 Selbstbewertung: verbessert")
-                    answer = verdict["final"]
-            print(f"\n🤖 {answer}\n")
-            return messages
+            return answer
 
-        # Alle angeforderten Werkzeuge ausführen und Ergebnisse zurückgeben.
         for call in tool_calls:
             name = call["function"]["name"]
             args = call["function"]["arguments"]
@@ -165,9 +146,8 @@ def run(task: str, messages: list | None = None) -> list:
                     args = json.loads(args)
                 except json.JSONDecodeError:
                     args = {}
-
-            print(f"   ⚙️  {name}({', '.join(f'{k}={str(v)[:50]}' for k, v in args.items())})")
-
+            if on_step:
+                on_step(name, args)
             func = tools.DISPATCH.get(name)
             if not func:
                 result = f"Unbekanntes Werkzeug: {name}"
@@ -178,16 +158,54 @@ def run(task: str, messages: list | None = None) -> list:
                 except Exception as exc:  # noqa: BLE001
                     result = f"Werkzeug '{name}' ist abgestürzt: {exc}"
                     log.exception("Werkzeug %s fehlgeschlagen (args=%s)", name, args)
-
             last_tool_result = str(result)
             messages.append({"role": "tool", "name": name, "content": str(result)})
 
-    # MAX_STEPS erreicht: falls ein Werkzeug lief, dessen Ergebnis zeigen.
-    if last_tool_result:
-        print(f"\n🤖 {last_tool_result}\n")
-    else:
-        print("\n⚠️  Maximale Schrittzahl erreicht.\n")
+    return last_tool_result or "(Maximale Schrittzahl erreicht.)"
+
+
+def run(task: str, messages: list | None = None) -> list:
+    """Terminal-Variante: bearbeitet eine Aufgabe und druckt die Antwort."""
+    client = ollama.Client(host=config.OLLAMA_HOST)
+    spec = roles.filter_specs(STATE["role"], tools.TOOLS_SPEC)
+    if messages is None:
+        messages = [{"role": "system", "content": _system_prompt() + TOOL_PROTOCOL_HINT}]
+    messages.append({"role": "user", "content": task})
+
+    def on_step(name, args):
+        print(f"   ⚙️  {name}({', '.join(f'{k}={str(v)[:50]}' for k, v in args.items())})")
+
+    answer = _run_loop(client, messages, spec, on_step)
+    if STATE["selfcheck"] and answer:
+        verdict = selfeval.critique_and_improve(client, task, answer)
+        if verdict["improved"]:
+            print("   🔁 Selbstbewertung: verbessert")
+            answer = verdict["final"]
+    print(f"\n🤖 {answer}\n")
     return messages
+
+
+def respond(task: str, prior_messages: list | None = None, role: str | None = None) -> str:
+    """Programmatische Variante (für die Browser-Integration): gibt die Antwort
+    als Text zurück. prior_messages ist der bisherige Chat-Verlauf (user/assistant).
+    """
+    client = ollama.Client(host=config.OLLAMA_HOST)
+    if role and roles.get(role):
+        STATE["role"] = role
+    spec = roles.filter_specs(STATE["role"], tools.TOOLS_SPEC)
+
+    messages = [{"role": "system", "content": _system_prompt() + TOOL_PROTOCOL_HINT}]
+    for m in (prior_messages or []):
+        if m.get("role") in ("user", "assistant") and m.get("content"):
+            messages.append({"role": m["role"], "content": m["content"]})
+    messages.append({"role": "user", "content": task})
+
+    answer = _run_loop(client, messages, spec)
+    if STATE["selfcheck"] and answer:
+        verdict = selfeval.critique_and_improve(client, task, answer)
+        if verdict["improved"]:
+            answer = verdict["final"]
+    return answer
 
 
 def main() -> None:

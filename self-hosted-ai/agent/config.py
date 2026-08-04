@@ -1,15 +1,17 @@
 """Zentrale Einstellungen für den Agenten. Hier bestimmst DU die Regeln."""
 
+import os
+
 # --- Modell ---------------------------------------------------------------
-# Fähigkeit vor Tempo: 32B als Hauptmodell. Für schnelleres Testen auf
-# "qwen2.5-coder:14b" umstellen.
-MODEL = "qwen2.5-coder:32b"
+# Standard: 14B (passt komplett in 16 GB VRAM -> schnell). Über die
+# Umgebungsvariable NERO_MODEL überschreibbar (z. B. "qwen2.5-coder:32b").
+MODEL = os.environ.get("NERO_MODEL", "qwen2.5-coder:14b")
 
-# Ollama-API (läuft lokal aus dem Docker-Stack)
-OLLAMA_HOST = "http://localhost:11434"
+# Ollama-API. Lokal: localhost. Im Container: über OLLAMA_HOST=http://ollama:11434.
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 
-# SearxNG-Websuche (aus dem Docker-Stack)
-SEARXNG_URL = "http://localhost:8888"
+# SearxNG-Websuche. Lokal: localhost:8888. Im Container: SEARXNG_URL=http://searxng:8080.
+SEARXNG_URL = os.environ.get("SEARXNG_URL", "http://localhost:8888")
 
 # --- Mixture of Agents ----------------------------------------------------
 # Mehrere Modelle antworten auf dieselbe Aufgabe, ein Aggregator-Modell baut

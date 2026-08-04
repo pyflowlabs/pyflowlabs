@@ -1,0 +1,38 @@
+# NERO QUANTUM – Browser-Integration (Agent hinter der Chat-Oberflaeche)
+# =====================================================================
+# Startet den Open-WebUI-Pipelines-Dienst, der unseren kompletten Agenten
+# (Werkzeuge, Deep Search, Rollen, Gedaechtnis) ausfuehrt. Danach erscheint
+# in NERO QUANTUM ein Modell "NERO QUANTUM" im Dropdown.
+#
+# Starten:
+#   docker compose -f docker-compose.yml -f docker-compose.pipelines.yml up -d
+#
+# Danach in der Oberflaeche verbinden (einmalig):
+#   Admin -> Einstellungen -> Verbindungen -> OpenAI API hinzufuegen:
+#     URL:  http://pipelines:9099
+#     Key:  0p3n-w3bu!
+#   -> Modell "NERO QUANTUM" erscheint im Dropdown.
+# =====================================================================
+
+services:
+  pipelines:
+    image: ghcr.io/open-webui/pipelines:main
+    container_name: pipelines
+    restart: unless-stopped
+    ports:
+      - "9099:9099"
+    environment:
+      # Adressen der Dienste im Docker-Netz (nicht localhost!)
+      - OLLAMA_HOST=http://ollama:11434
+      - SEARXNG_URL=http://searxng:8080
+      - NERO_MODEL=qwen2.5-coder:14b
+    volumes:
+      - ./pipelines:/app/pipelines      # unsere Pipeline-Datei
+      - ./agent:/app/nero_agent         # der Agent-Code
+      - pipelines-data:/app/pipelines/data
+    depends_on:
+      - ollama
+      - searxng
+
+volumes:
+  pipelines-data:
