@@ -20,6 +20,7 @@ import logsetup
 import memory
 import plugins_loader
 import roles
+import router
 import selfeval
 import tools
 import vision
@@ -68,7 +69,8 @@ def _system_prompt() -> str:
 TOOL_PROTOCOL_HINT = (
     "\n\nWerkzeug-Protokoll: Rufe ein Werkzeug nur auf, wenn nötig. Sobald ein "
     "Werkzeug ein Ergebnis geliefert hat, antworte in normaler Sprache mit dem "
-    "Ergebnis. Gib dann KEIN JSON und keine weiteren Werkzeug-Aufrufe aus."
+    "Ergebnis. Gib dann KEIN JSON und keine weiteren Werkzeug-Aufrufe aus. "
+    "Wenn eine Recherche Quellen (URLs) geliefert hat, nenne sie am Ende als Quellenliste."
 )
 
 
@@ -114,13 +116,14 @@ def _extract_tool_call(content: str):
     return None
 
 
-def _run_loop(client, messages: list, spec: list, on_step=None) -> str:
+def _run_loop(client, messages: list, spec: list, model: str, on_step=None) -> str:
     """Kern-Loop: chattet mit dem Modell, führt Werkzeuge aus, gibt die finale
     Antwort als Text zurück. on_step(name, args) meldet jeden Werkzeug-Aufruf.
     """
     last_tool_result = None
+    last_sources = ""       # Quellenliste aus deep_search (falls das Modell sie weglässt)
     for _ in range(MAX_STEPS):
-        response = client.chat(model=config.MODEL, messages=messages, tools=spec)
+        response = client.chat(model=model, messages=messages, tools=spec)
         msg = response["message"]
         messages.append(msg)
 
@@ -136,6 +139,9 @@ def _run_loop(client, messages: list, spec: list, on_step=None) -> str:
             # Leere/kaputte JSON-"Antwort" -> stattdessen Werkzeug-Ergebnis zeigen.
             if (not answer or _is_degenerate(answer)) and last_tool_result:
                 answer = last_tool_result
+            # Recherche-Quellen anhängen, wenn das Modell sie vergessen hat.
+            if last_sources and "http" not in answer:
+                answer = f"{answer}\n\n{last_sources}"
             return answer
 
         for call in tool_calls:
@@ -159,8 +165,14 @@ def _run_loop(client, messages: list, spec: list, on_step=None) -> str:
                     result = f"Werkzeug '{name}' ist abgestürzt: {exc}"
                     log.exception("Werkzeug %s fehlgeschlagen (args=%s)", name, args)
             last_tool_result = str(result)
+            if name == "deep_search" and "Gelesene Quellen" in str(result):
+                idx = str(result).find("— Gelesene Quellen —")
+                if idx != -1:
+                    last_sources = str(result)[idx:]
             messages.append({"role": "tool", "name": name, "content": str(result)})
 
+    if last_tool_result and last_sources and "http" not in last_tool_result:
+        return f"{last_tool_result}\n\n{last_sources}"
     return last_tool_result or "(Maximale Schrittzahl erreicht.)"
 
 
@@ -175,7 +187,10 @@ def run(task: str, messages: list | None = None) -> list:
     def on_step(name, args):
         print(f"   ⚙️  {name}({', '.join(f'{k}={str(v)[:50]}' for k, v in args.items())})")
 
-    answer = _run_loop(client, messages, spec, on_step)
+    model = router.pick_model(task)
+    if model != config.MODEL:
+        print(f"   🧭 Router: nutze {model} (komplexe Aufgabe)")
+    answer = _run_loop(client, messages, spec, model, on_step)
     if STATE["selfcheck"] and answer:
         verdict = selfeval.critique_and_improve(client, task, answer)
         if verdict["improved"]:
@@ -200,7 +215,7 @@ def respond(task: str, prior_messages: list | None = None, role: str | None = No
             messages.append({"role": m["role"], "content": m["content"]})
     messages.append({"role": "user", "content": task})
 
-    answer = _run_loop(client, messages, spec)
+    answer = _run_loop(client, messages, spec, router.pick_model(task))
     if STATE["selfcheck"] and answer:
         verdict = selfeval.critique_and_improve(client, task, answer)
         if verdict["improved"]:

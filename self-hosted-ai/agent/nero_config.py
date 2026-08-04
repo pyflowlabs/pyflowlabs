@@ -55,6 +55,11 @@ SANDBOX_PIDS = 256          # max. Prozesse
 # --- Benchmark ------------------------------------------------------------
 BENCH_PROMPT = "Erkläre in 3 Sätzen, was Quantisierung bei LLMs bewirkt."
 
+# --- Auto-Modell-Router ---------------------------------------------------
+# Bei schweren/komplexen Aufgaben automatisch das große Modell nehmen.
+HEAVY_MODEL = os.environ.get("NERO_HEAVY_MODEL", "qwen2.5-coder:32b")
+ROUTER_ENABLED = os.environ.get("NERO_ROUTER", "1") not in ("0", "false", "False")
+
 # --- Dein System-Prompt / deine Regeln ------------------------------------
 # Das ist die "Persönlichkeit" und das Regelwerk deiner KI. Neutral und direkt,
 # ohne fremde Filter — nur deine eigenen Vorgaben. Ändere alles nach Bedarf.
