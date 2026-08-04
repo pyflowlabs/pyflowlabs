@@ -27,9 +27,14 @@ services:
       - OLLAMA_HOST=http://ollama:11434
       - SEARXNG_URL=http://searxng:8080
       - NERO_MODEL=qwen2.5-coder:14b
+      # Pipeline direkt aus dem GitHub-Repo laden (umgeht Windows-Mount-Probleme):
+      - PIPELINES_URLS=https://raw.githubusercontent.com/pyflowlabs/pyflowlabs/claude/custom-neutral-ai-network-482n4z/self-hosted-ai/pipelines/nero_agent.py
     volumes:
-      - ./pipelines:/app/pipelines      # unsere Pipeline-Datei
-      - ./agent:/app/nero_agent         # der Agent-Code
+      - pipelines-data:/app/pipelines   # beschreibbarer Speicher im Container (kein Windows-Mount)
+      - ./agent:/app/nero_agent         # der Agent-Code (nur lesen)
     depends_on:
       - ollama
       - searxng
+
+volumes:
+  pipelines-data:
