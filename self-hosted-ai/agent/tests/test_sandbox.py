@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 pytest.importorskip("requests")
 pytest.importorskip("bs4")
 
-import config
+import nero_config as config
 import tools
 
 

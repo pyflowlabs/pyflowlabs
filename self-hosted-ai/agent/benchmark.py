@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-import config
+import nero_config as config
 import logsetup
 
 log, LOG_FILE = logsetup.setup("nero.benchmark")

@@ -17,7 +17,7 @@ import json
 import os
 from datetime import datetime
 
-import config
+import nero_config as config
 import logsetup
 
 log, LOG_FILE = logsetup.setup("nero.scheduler")

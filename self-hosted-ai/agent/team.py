@@ -14,7 +14,7 @@ Start:  python team.py
 import json
 import re
 
-import config
+import nero_config as config
 import logsetup
 import roles
 

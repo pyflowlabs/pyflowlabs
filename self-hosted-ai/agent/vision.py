@@ -8,7 +8,7 @@ import os
 
 import ollama
 
-import config
+import nero_config as config
 import logsetup
 
 log, _ = logsetup.setup("nero.vision")

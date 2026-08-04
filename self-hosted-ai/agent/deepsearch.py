@@ -17,7 +17,7 @@ Tiefe einstellen in config.py -> DEEP_QUERIES / DEEP_PAGES / DEEP_ROUNDS.
 
 import ollama
 
-import config
+import nero_config as config
 import logsetup
 import tools
 

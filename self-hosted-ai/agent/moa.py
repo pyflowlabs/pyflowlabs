@@ -15,7 +15,7 @@ Modelle festlegen in config.py -> MOA_PROPOSERS / MOA_AGGREGATOR.
 
 import ollama
 
-import config
+import nero_config as config
 import logsetup
 
 log, LOG_FILE = logsetup.setup("nero.moa")

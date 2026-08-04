@@ -73,7 +73,7 @@ Beide Richtungen sind deine Wahl:
 
 | Was | Datei |
 | --- | --- |
-| Verhalten / Ton / Regeln (Prompt) | `agent/config.py` -> `SYSTEM_PROMPT` |
+| Verhalten / Ton / Regeln (Prompt) | `agent/nero_config.py` -> `SYSTEM_PROMPT` |
 | Verfügbare Werkzeuge | `agent/tools.py` -> `TOOLS_SPEC` / `DISPATCH` |
-| Harte Grenzen (Pfad, Zeitlimit) | `agent/config.py` + `agent/tools.py` |
+| Harte Grenzen (Pfad, Zeitlimit) | `agent/nero_config.py` + `agent/tools.py` |
 | Regeln des Chat-Modells | Open WebUI -> Settings -> System Prompt |

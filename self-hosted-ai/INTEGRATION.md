@@ -10,7 +10,7 @@ Technisch läuft dahinter unser Agent über einen **Pipelines-Dienst**.
 ## Schritt 1 – Update holen
 Im `self-hosted-ai`-Ordner (bzw. `agent`-Unterordner):
 ```powershell
-git checkout -- agent/config.py   # falls du config.py lokal geaendert hattest
+git checkout -- agent/nero_config.py   # falls du config.py lokal geaendert hattest
 git pull
 ```
 > Der Modell-Standard ist jetzt sowieso 14B – die lokale Änderung brauchst du
@@ -61,7 +61,7 @@ NERO-QUANTUM-Oberfläche  ──►  pipelines:9099  ──►  Agent (agent.res
 ## Modell/Rolle einstellen
 - **Modell:** in `docker-compose.pipelines.yml` → `NERO_MODEL` (Standard `qwen2.5-coder:14b`).
   Nach Änderung: `docker compose -f docker-compose.yml -f docker-compose.pipelines.yml up -d`
-- **Werkzeuge/Regeln:** wie gehabt in `agent/config.py`, `agent/tools.py`, `agent/roles.py`.
+- **Werkzeuge/Regeln:** wie gehabt in `agent/nero_config.py`, `agent/tools.py`, `agent/roles.py`.
 
 ## Optional freischalten
 - **Gedächtnis/RAG:** `docker exec -it ollama ollama pull nomic-embed-text` und im

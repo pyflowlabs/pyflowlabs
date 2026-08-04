@@ -18,7 +18,7 @@ Damit *tut* die KI Dinge, statt nur zu antworten.
 Toolchains & Mathe/DL-Bibliotheken (NumPy/SciPy/SymPy/scikit-learn/PyTorch):
 siehe `../sandbox/README.md`.
 
-Deep Search auch einzeln nutzbar: `python deepsearch.py` (Tiefe in `config.py` →
+Deep Search auch einzeln nutzbar: `python deepsearch.py` (Tiefe in `nero_config.py` →
 `DEEP_QUERIES` / `DEEP_PAGES` / `DEEP_ROUNDS`).
 
 Neue Fähigkeiten hinzufügen = eine Funktion in `tools.py` schreiben + Schema in
@@ -50,7 +50,7 @@ Dann Aufgaben eingeben, z. B.:
 
 ## Einstellungen
 
-Alles in `config.py`:
+Alles in `nero_config.py`:
 - **`MODEL`** — Hauptmodell (Standard `qwen2.5-coder:32b`; für Tempo `...:14b`)
 - **`SYSTEM_PROMPT`** — deine Regeln / die „Persönlichkeit" (neutral, ohne fremde Filter)
 - **`WORKSPACE_DIR`** — wo Dateiwerkzeuge arbeiten dürfen

@@ -20,7 +20,7 @@ import tempfile
 import requests
 from bs4 import BeautifulSoup
 
-import config
+import nero_config as config
 
 log = logging.getLogger("nero.tools")
 

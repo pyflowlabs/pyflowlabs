@@ -51,14 +51,14 @@ Beides parallel möglich – du wählst pro Situation Web oder App.
   ```bash
   cd agent && pip install -r requirements.txt && python moa.py
   ```
-  Proposer/Aggregator festlegen in `agent/config.py`.
+  Proposer/Aggregator festlegen in `agent/nero_config.py`.
 - **Deep Search (tiefe Recherche mit Quellen):**
   ```bash
   cd agent && python deepsearch.py
   ```
   Bildet mehrere Suchanfragen, liest viele Quellen, iteriert, fasst mit Links
   zusammen. Der Agent (`agent.py`) kann `deep_search` auch selbst aufrufen.
-  Tiefe: `config.py` → `DEEP_QUERIES` / `DEEP_PAGES` / `DEEP_ROUNDS`.
+  Tiefe: `nero_config.py` → `DEEP_QUERIES` / `DEEP_PAGES` / `DEEP_ROUNDS`.
 
 ---
 
@@ -82,7 +82,7 @@ auf der jeweiligen HuggingFace-Modellseite.
 
 **Als Standard setzen:**
 - Für den Installer: `NERO_MODEL=<name> ./install.sh`
-- Für den Agenten: `agent/config.py` → `MODEL = "<name>"`
+- Für den Agenten: `agent/nero_config.py` → `MODEL = "<name>"`
 
 > Modellwahl ist deine Sache – deine Maschine, deine Entscheidung. „Uncensored"
 > lässt nur die modell­eigenen Vorbehalte weg, macht das Modell nicht klüger.
@@ -132,10 +132,10 @@ mit empfohlener Reihenfolge.
 ## 7. Deine Kontrolle (nichts versteckt)
 | Was | Wo |
 | --- | --- |
-| Verhalten / Regeln | `agent/config.py` → `SYSTEM_PROMPT` |
+| Verhalten / Regeln | `agent/nero_config.py` → `SYSTEM_PROMPT` |
 | Werkzeuge | `agent/tools.py` |
-| Modell (Agent) | `agent/config.py` → `MODEL` |
-| Mixture of Agents | `agent/config.py` → `MOA_*` |
+| Modell (Agent) | `agent/nero_config.py` → `MODEL` |
+| Mixture of Agents | `agent/nero_config.py` → `MOA_*` |
 | Chat-Regeln (UI) | NERO QUANTUM → Settings → System Prompt |
 
 Stoppen: `docker compose down` · Neustart: `./install.sh` oder `docker compose up -d`

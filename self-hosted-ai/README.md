@@ -52,7 +52,7 @@ Stoppen: `docker compose down` · Wieder starten: `./install.sh` oder `docker co
   - **HuggingFace-GGUF:** `hf.co/USER/REPO:QUANT` — so ziehst du beliebige
     Community-Fine-tunes (z. B. Dolphin-Varianten, Sao10K-, TheDrummer-,
     BeaverAI-Modelle). Deine Maschine, deine Wahl.
-- Welches Modell der **Agent** nutzt: `agent/config.py` → `MODEL`.
+- Welches Modell der **Agent** nutzt: `agent/nero_config.py` → `MODEL`.
 
 ---
 
@@ -113,14 +113,14 @@ Alles liegt offen in Dateien, die dir gehören:
 
 | Was du bestimmst | Wo |
 | --- | --- |
-| Verhalten / Ton / Regeln | `agent/config.py` -> `SYSTEM_PROMPT` |
+| Verhalten / Ton / Regeln | `agent/nero_config.py` -> `SYSTEM_PROMPT` |
 | Verfügbare Werkzeuge | `agent/tools.py` |
-| Modell | `agent/config.py` -> `MODEL` bzw. `NERO_MODEL` |
+| Modell | `agent/nero_config.py` -> `MODEL` bzw. `NERO_MODEL` |
 | Regeln der Chat-Oberfläche | in NERO QUANTUM: Settings -> System Prompt |
 
 Es sind **keine versteckten Grenzen** eingebaut. Die einzige mitgelieferte Regel
 ist ein sichtbarer Selbstschutz (Bestätigung vor löschenden Aktionen auf deinem
-System) in `agent/config.py` — den änderst nur du.
+System) in `agent/nero_config.py` — den änderst nur du.
 
 Hinweis: Das offene Basismodell kann eigene Vorbehalte aus seinem Originaltraining
 mitbringen (nicht von diesem Setup). Wer weniger davon will, zieht ein

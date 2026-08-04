@@ -4,7 +4,7 @@ Die KI bewertet ihre eigene Antwort (richtig? vollständig? was besser?) und
 liefert bei Bedarf eine überarbeitete Fassung.
 """
 
-import config
+import nero_config as config
 
 
 def critique_and_improve(client, task: str, answer: str, model: str = None) -> dict:

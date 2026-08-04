@@ -14,7 +14,7 @@ import re
 
 import ollama
 
-import config
+import nero_config as config
 import deepsearch
 import logsetup
 import memory

@@ -17,7 +17,7 @@ import os
 
 import ollama
 
-import config
+import nero_config as config
 import logsetup
 
 log, LOG_FILE = logsetup.setup("nero.memory")
