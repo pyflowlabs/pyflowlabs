@@ -25,3 +25,21 @@ def pick_model(task: str) -> str:
     if len(task or "") > 600 or any(h in t for h in HEAVY_HINTS):
         return config.HEAVY_MODEL
     return config.MODEL
+
+
+# Signale, dass eine Frage aktuelle/externe Fakten braucht -> Suche erzwingen,
+# damit das Modell nicht aus (veraltetem) Gedächtnis halluziniert.
+SEARCH_HINTS = (
+    "aktuell", "neueste", "neuste", "neusten", "neuesten", "heute", "momentan",
+    "tier list", "tierliste", "tier-liste", "tier liste", "meta build", "meta-build",
+    "meta builds", "patch", "release", "erschien", "erscheint", "preis", "kostet",
+    "news", "nachricht", "wetter", "kurs", "aktie", "börse",
+    "2023", "2024", "2025", "2026", "wer ist", "wann kommt", "beste build",
+    "aktuelle", "dieses jahr", "letzte woche", "gerade", "version",
+)
+
+
+def needs_search(task: str) -> bool:
+    """True, wenn die Frage aktuelle/externe Fakten braucht (Suche erzwingen)."""
+    t = (task or "").lower()
+    return any(h in t for h in SEARCH_HINTS)

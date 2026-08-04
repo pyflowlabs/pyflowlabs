@@ -70,7 +70,16 @@ TOOL_PROTOCOL_HINT = (
     "\n\nWerkzeug-Protokoll: Rufe ein Werkzeug nur auf, wenn nötig. Sobald ein "
     "Werkzeug ein Ergebnis geliefert hat, antworte in normaler Sprache mit dem "
     "Ergebnis. Gib dann KEIN JSON und keine weiteren Werkzeug-Aufrufe aus. "
-    "Wenn eine Recherche Quellen (URLs) geliefert hat, nenne sie am Ende als Quellenliste."
+    "Wenn eine Recherche Quellen (URLs) geliefert hat, nenne sie am Ende als Quellenliste. "
+    "Erfinde NIEMALS Fakten. Wenn du etwas nicht sicher weißt, nutze deep_search."
+)
+
+# Wird bei faktischen/aktuellen Fragen zusätzlich eingefügt (Zwangs-Suche).
+SEARCH_DIRECTIVE = (
+    "WICHTIG: Diese Frage erfordert aktuelle/externe Fakten. Rufe ZUERST das "
+    "Werkzeug deep_search auf und beantworte die Frage AUSSCHLIESSLICH auf Basis "
+    "der gefundenen Quellen (mit Links). Wenn du nichts Belastbares findest, sag "
+    "das ehrlich. Erfinde KEINE Namen, Zahlen oder Fakten."
 )
 
 
@@ -183,6 +192,8 @@ def run(task: str, messages: list | None = None) -> list:
     if messages is None:
         messages = [{"role": "system", "content": _system_prompt() + TOOL_PROTOCOL_HINT}]
     messages.append({"role": "user", "content": task})
+    if router.needs_search(task):
+        messages.append({"role": "system", "content": SEARCH_DIRECTIVE})
 
     def on_step(name, args):
         print(f"   ⚙️  {name}({', '.join(f'{k}={str(v)[:50]}' for k, v in args.items())})")
@@ -214,6 +225,8 @@ def respond(task: str, prior_messages: list | None = None, role: str | None = No
         if m.get("role") in ("user", "assistant") and m.get("content"):
             messages.append({"role": m["role"], "content": m["content"]})
     messages.append({"role": "user", "content": task})
+    if router.needs_search(task):
+        messages.append({"role": "system", "content": SEARCH_DIRECTIVE})
 
     answer = _run_loop(client, messages, spec, router.pick_model(task))
     if STATE["selfcheck"] and answer:
