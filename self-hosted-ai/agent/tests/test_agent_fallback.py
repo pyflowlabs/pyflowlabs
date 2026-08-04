@@ -28,3 +28,8 @@ def test_plain_text_is_not_a_tool_call():
 
 def test_unknown_tool_ignored():
     assert agent._extract_tool_call('{"name": "does_not_exist", "arguments": {}}') is None
+
+
+def test_degenerate_answer_detected():
+    assert agent._is_degenerate('```json\n{"name": null, "arguments": null}\n```') is True
+    assert agent._is_degenerate("Die Primzahlen sind [2, 3, 5].") is False

@@ -63,6 +63,28 @@ def _system_prompt() -> str:
     return r["prompt"] if r else config.SYSTEM_PROMPT
 
 
+# Wird an den System-Prompt gehängt, damit Modelle sich besser ans Werkzeug-
+# Protokoll halten (v. a. kleinere Modelle wie das 14B).
+TOOL_PROTOCOL_HINT = (
+    "\n\nWerkzeug-Protokoll: Rufe ein Werkzeug nur auf, wenn nötig. Sobald ein "
+    "Werkzeug ein Ergebnis geliefert hat, antworte in normaler Sprache mit dem "
+    "Ergebnis. Gib dann KEIN JSON und keine weiteren Werkzeug-Aufrufe aus."
+)
+
+
+def _is_degenerate(answer: str) -> bool:
+    """True, wenn die 'Antwort' nur ein leerer/kaputter Werkzeug-JSON ist."""
+    m = re.search(r"\{.*\}", answer, re.DOTALL)
+    if not m:
+        return False
+    try:
+        obj = json.loads(m.group(0))
+    except json.JSONDecodeError:
+        return False
+    # z. B. {"name": null, "arguments": null} oder leere Aufrufe
+    return "name" in obj and not obj.get("name")
+
+
 def _extract_tool_call(content: str):
     """Erkennt einen als Text ausgegebenen Werkzeug-Aufruf (JSON mit name/arguments).
 
@@ -98,9 +120,10 @@ def run(task: str, messages: list | None = None) -> list:
     spec = roles.filter_specs(STATE["role"], tools.TOOLS_SPEC)
 
     if messages is None:
-        messages = [{"role": "system", "content": _system_prompt()}]
+        messages = [{"role": "system", "content": _system_prompt() + TOOL_PROTOCOL_HINT}]
     messages.append({"role": "user", "content": task})
 
+    last_tool_result = None
     for _ in range(MAX_STEPS):
         response = client.chat(
             model=config.MODEL,
@@ -121,6 +144,10 @@ def run(task: str, messages: list | None = None) -> list:
         if not tool_calls:
             # Keine Werkzeug-Aufrufe mehr -> finale Antwort.
             answer = msg.get("content", "").strip()
+            # Kleine Modelle geben nach einem Werkzeug manchmal leeren/kaputten
+            # JSON statt einer Antwort aus. Dann das Werkzeug-Ergebnis direkt zeigen.
+            if (not answer or _is_degenerate(answer)) and last_tool_result:
+                answer = last_tool_result
             if STATE["selfcheck"] and answer:
                 verdict = selfeval.critique_and_improve(client, task, answer)
                 if verdict["improved"]:
@@ -152,9 +179,14 @@ def run(task: str, messages: list | None = None) -> list:
                     result = f"Werkzeug '{name}' ist abgestürzt: {exc}"
                     log.exception("Werkzeug %s fehlgeschlagen (args=%s)", name, args)
 
+            last_tool_result = str(result)
             messages.append({"role": "tool", "name": name, "content": str(result)})
 
-    print("\n⚠️  Maximale Schrittzahl erreicht.\n")
+    # MAX_STEPS erreicht: falls ein Werkzeug lief, dessen Ergebnis zeigen.
+    if last_tool_result:
+        print(f"\n🤖 {last_tool_result}\n")
+    else:
+        print("\n⚠️  Maximale Schrittzahl erreicht.\n")
     return messages
 
 
