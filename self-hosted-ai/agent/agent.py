@@ -10,6 +10,7 @@ Start:  python agent.py
 """
 
 import json
+import re
 
 import ollama
 
@@ -62,6 +63,35 @@ def _system_prompt() -> str:
     return r["prompt"] if r else config.SYSTEM_PROMPT
 
 
+def _extract_tool_call(content: str):
+    """Erkennt einen als Text ausgegebenen Werkzeug-Aufruf (JSON mit name/arguments).
+
+    Manche Modelle lösen Tools nicht strukturiert aus, sondern schreiben z. B.
+    {"name": "run_python", "arguments": {...}} in den Text. Das fangen wir hier ab.
+    Gibt einen Aufruf im Ollama-Format zurück oder None.
+    """
+    if not content:
+        return None
+    # Zuerst in ```json ... ```-Blöcken suchen, sonst das erste JSON-Objekt.
+    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content, re.DOTALL)
+    candidate = m.group(1) if m else None
+    if not candidate:
+        m = re.search(r"(\{.*\})", content, re.DOTALL)
+        candidate = m.group(1) if m else None
+    if not candidate:
+        return None
+    try:
+        obj = json.loads(candidate)
+    except json.JSONDecodeError:
+        return None
+    name = obj.get("name")
+    args = obj.get("arguments", obj.get("parameters", {}))
+    if name and name in tools.DISPATCH and isinstance(args, dict):
+        log.info("Text-Werkzeugaufruf erkannt und ausgeführt: %s", name)
+        return {"function": {"name": name, "arguments": args}}
+    return None
+
+
 def run(task: str, messages: list | None = None) -> list:
     """Bearbeitet eine Aufgabe und gibt den aktualisierten Nachrichtenverlauf zurück."""
     client = ollama.Client(host=config.OLLAMA_HOST)
@@ -81,6 +111,13 @@ def run(task: str, messages: list | None = None) -> list:
         messages.append(msg)
 
         tool_calls = msg.get("tool_calls")
+        if not tool_calls:
+            # Fallback: manche Modelle geben den Werkzeug-Aufruf als Text-JSON
+            # aus, statt ihn strukturiert auszulösen. Diesen erkennen und ausführen.
+            fb = _extract_tool_call(msg.get("content", ""))
+            if fb:
+                tool_calls = [fb]
+
         if not tool_calls:
             # Keine Werkzeug-Aufrufe mehr -> finale Antwort.
             answer = msg.get("content", "").strip()
