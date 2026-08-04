@@ -29,10 +29,6 @@ services:
     volumes:
       - ./pipelines:/app/pipelines      # unsere Pipeline-Datei
       - ./agent:/app/nero_agent         # der Agent-Code
-      - pipelines-data:/app/pipelines/data
     depends_on:
       - ollama
       - searxng
-
-volumes:
-  pipelines-data:
