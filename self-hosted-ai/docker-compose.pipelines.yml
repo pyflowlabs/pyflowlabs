@@ -19,6 +19,7 @@ services:
     image: ghcr.io/open-webui/pipelines:main
     container_name: pipelines
     restart: unless-stopped
+    user: root                  # darf im gemounteten Ordner Unterordner anlegen
     ports:
       - "9099:9099"
     environment:
