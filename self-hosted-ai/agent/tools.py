@@ -125,13 +125,15 @@ def run_python(code: str) -> str:
     Hinweis: läuft als Subprozess mit Zeitlimit. Für echte Isolation später
     in einen Docker-Container verlagern (Phase 5).
     """
+    workdir = os.path.abspath(config.WORKSPACE_DIR)
+    os.makedirs(workdir, exist_ok=True)  # Arbeitsordner sicher anlegen (Windows: WinError 267)
     try:
         result = subprocess.run(
             [sys.executable, "-c", code],
             capture_output=True,
             text=True,
             timeout=config.CODE_TIMEOUT,
-            cwd=os.path.abspath(config.WORKSPACE_DIR),
+            cwd=workdir,
         )
     except subprocess.TimeoutExpired:
         log.warning("run_python: Zeitlimit (%ss) überschritten.", config.CODE_TIMEOUT)
