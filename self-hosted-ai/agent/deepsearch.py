@@ -15,6 +15,8 @@ Start:  python deepsearch.py
 Tiefe einstellen in config.py -> DEEP_QUERIES / DEEP_PAGES / DEEP_ROUNDS.
 """
 
+import concurrent.futures
+
 import ollama
 
 import nero_config as config
@@ -49,29 +51,26 @@ def deep_search(question: str) -> str:
         if not queries:
             queries = [focus]
 
-        # Kandidaten sammeln
-        candidates = []
+        # Kandidaten sammeln (dedupliziert)
+        candidates, cand_urls = [], set()
         for q in queries:
             print(f"      · suche: {q}")
             for r in tools.search_web_raw(q, num_results=6):
                 url = r.get("url", "")
-                if url and url not in seen_urls:
+                if url and url not in seen_urls and url not in cand_urls:
                     candidates.append(r)
+                    cand_urls.add(url)
 
-        # Beste Seiten laden (bis DEEP_PAGES neue je Runde)
-        loaded = 0
-        for r in candidates:
-            if loaded >= config.DEEP_PAGES:
-                break
-            url = r["url"]
-            if url in seen_urls:
-                continue
-            seen_urls.add(url)
-            print(f"      · lese: {url}")
-            page = tools.fetch_page(url)
+        # Top-N neue Seiten auswählen und PARALLEL laden (viel schneller).
+        to_load = candidates[: config.DEEP_PAGES]
+        for r in to_load:
+            seen_urls.add(r["url"])
+        print(f"      · lade {len(to_load)} Seiten parallel …")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(2, config.DEEP_PAGES)) as ex:
+            fetched = list(ex.map(lambda r: (r, tools.fetch_page(r["url"])), to_load))
+        for r, page in fetched:
             if page and not page.startswith("Konnte Seite nicht laden"):
-                collected.append((url, r.get("title", ""), page))
-                loaded += 1
+                collected.append((r["url"], r.get("title", ""), page))
 
         if rnd < config.DEEP_ROUNDS and collected:
             # Lücken bestimmen -> Fokus für nächste Runde

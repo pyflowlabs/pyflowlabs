@@ -22,9 +22,11 @@ MOA_AGGREGATOR = "qwen2.5-coder:32b"
 # --- Deep Search ----------------------------------------------------------
 # Tiefe Recherche: mehrere Suchanfragen -> viele Quellen lesen -> iterieren
 # -> mit Quellen zusammenfassen.
-DEEP_QUERIES = 4   # Suchanfragen je Runde
-DEEP_PAGES = 5     # Seiten je Runde tatsächlich lesen/scrapen
-DEEP_ROUNDS = 2    # Recherche-Runden (Runde 2 schließt erkannte Lücken)
+# Standardmäßig schlank für Tempo. Für gründlichere (langsamere) Recherche
+# höher setzen, z. B. NERO_DEEP_ROUNDS=2.
+DEEP_QUERIES = int(os.environ.get("NERO_DEEP_QUERIES", "3"))  # Suchanfragen je Runde
+DEEP_PAGES = int(os.environ.get("NERO_DEEP_PAGES", "3"))      # Seiten je Runde (parallel geladen)
+DEEP_ROUNDS = int(os.environ.get("NERO_DEEP_ROUNDS", "1"))    # Recherche-Runden
 
 # --- Langzeitgedächtnis / RAG ---------------------------------------------
 # Embedding-Modell (lokal über Ollama). Vorher laden:
